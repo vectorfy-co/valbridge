@@ -1,0 +1,35 @@
+{
+  "name": "@vectorfyco/valbridge-cli",
+  "version": "0.4.0",
+  "type": "module",
+  "description": "Installable CLI launcher for valbridge",
+  "license": "MIT",
+  "homepage": "https://github.com/vectorfy-co/valbridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorfy-co/valbridge.git",
+    "directory": "typescript/packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/vectorfy-co/valbridge/issues"
+  },
+  "keywords": [
+    "valbridge",
+    "cli",
+    "json-schema",
+    "code-generation",
+    "zod",
+    "pydantic"
+  ],
+  "bin": {
+    "valbridge": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "mkdir -p dist && cp src/bin.js dist/bin.js && chmod +x dist/bin.js",
+    "typecheck": "node --check src/bin.js",
+    "test": "node --check src/bin.js"
+  }
+}

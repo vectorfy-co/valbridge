@@ -14,12 +14,14 @@ The repo is intentionally focused on the current Zod/Pydantic bridge. Anything o
 ## Packages
 
 - npm:
+  - `@vectorfyco/valbridge-cli`
   - `@vectorfyco/valbridge`
   - `@vectorfyco/valbridge-core`
   - `@vectorfyco/valbridge-zod`
   - `@vectorfyco/valbridge-zod-extractor`
   - `@vectorfyco/valbridge-zod-bridge`
 - PyPI / workspace packages:
+  - `valbridge-cli`
   - `valbridge`
   - `valbridge-core`
   - `valbridge-pydantic`
@@ -45,4 +47,25 @@ Thanks to the original `xschema` work for the foundation this refactor and rebra
 cd typescript && pnpm install
 cd ../python && uv sync
 cd ../cli && go test ./...
+```
+
+## CLI Installation
+
+Published installable entrypoints:
+
+```bash
+npx -y @vectorfyco/valbridge-cli --help
+uvx valbridge-cli --help
+```
+
+For local workspace development, you can still run the Go CLI directly:
+
+```bash
+cd cli && go run . --help
+```
+
+If you need local workspace packages instead of published adapters/extractors, pass:
+
+```bash
+valbridge --workspace-root /path/to/valbridge --prefer-workspace generate ...
 ```

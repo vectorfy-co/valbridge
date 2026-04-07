@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 [manifest]
 members = [
     "valbridge",
+    "valbridge-cli",
     "valbridge-core",
     "valbridge-pydantic",
     "valbridge-pydantic-bridge",
@@ -311,6 +312,11 @@ dev = [
 [package.metadata]
 requires-dist = [{ name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" }]
 provides-extras = ["dev"]
+
+[[package]]
+name = "valbridge-cli"
+version = "0.4.0"
+source = { editable = "packages/cli" }
 
 [[package]]
 name = "valbridge-core"

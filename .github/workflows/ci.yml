@@ -198,6 +198,57 @@ jobs:
         run: uv run pytest
         working-directory: python
 
+  cli-install-smoke:
+    runs-on: ubuntu-latest
+    needs: changes
+    if: |
+      needs.changes.outputs.cli == 'true' ||
+      needs.changes.outputs.typescript == 'true' ||
+      needs.changes.outputs.python == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Build local valbridge binary
+        run: go build -o "${RUNNER_TEMP}/valbridge" .
+        working-directory: cli
+
+      - name: Smoke test npm CLI launcher
+        env:
+          VALBRIDGE_CLI_BIN: ${{ runner.temp }}/valbridge
+        run: |
+          pnpm run build
+          tarball=$(pnpm pack --pack-destination "${RUNNER_TEMP}" | tail -n 1)
+          npm exec --yes --package "${tarball}" valbridge -- --help
+        working-directory: typescript/packages/cli
+
+      - name: Smoke test PyPI CLI launcher
+        env:
+          VALBRIDGE_CLI_BIN: ${{ runner.temp }}/valbridge
+        run: |
+          uv sync
+          uv build --wheel --out-dir "${RUNNER_TEMP}/py-dist" --clear
+          wheel=$(find "${RUNNER_TEMP}/py-dist" -name 'valbridge_cli-*.whl' | head -n 1)
+          uv tool run --from "${wheel}" valbridge --help
+        working-directory: python/packages/cli
+
   # Passthrough jobs for branch protection
   go-test-result:
     runs-on: ubuntu-latest
@@ -213,7 +264,7 @@ jobs:
 
   ts-build-result:
     runs-on: ubuntu-latest
-    needs: [changes, ts-build, ts-zod-compat]
+    needs: [changes, ts-build, ts-zod-compat, cli-install-smoke]
     if: always()
     steps:
       - run: |
@@ -225,16 +276,24 @@ jobs:
             echo "ts-zod-compat failed"
             exit 1
           fi
+          if [ "${{ needs.cli-install-smoke.result }}" = "failure" ]; then
+            echo "cli-install-smoke failed"
+            exit 1
+          fi
           echo "ts-build passed or was skipped"
 
   py-build-result:
     runs-on: ubuntu-latest
-    needs: [changes, py-build]
+    needs: [changes, py-build, cli-install-smoke]
     if: always()
     steps:
       - run: |
           if [ "${{ needs.py-build.result }}" = "failure" ]; then
             echo "py-build failed"
+            exit 1
+          fi
+          if [ "${{ needs.cli-install-smoke.result }}" = "failure" ]; then
+            echo "cli-install-smoke failed"
             exit 1
           fi
           echo "py-build passed or was skipped"

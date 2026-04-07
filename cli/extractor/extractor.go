@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/vectorfy-co/valbridge/adapter"
+	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/parser"
 	"github.com/vectorfy-co/valbridge/retriever"
 )
@@ -30,6 +31,18 @@ type extractorPayload struct {
 	Schema      json.RawMessage      `json:"schema"`
 	Diagnostics []adapter.Diagnostic `json:"diagnostics,omitempty"`
 }
+
+type commandCandidate struct {
+	Label string
+	Dir   string
+	Cmd   string
+	Args  []string
+}
+
+const (
+	publishedZodExtractorPackage      = "@vectorfyco/valbridge-zod-extractor"
+	publishedPydanticExtractorPackage = "valbridge-pydantic-extractor"
+)
 
 func IsNativeSourceType(sourceType parser.SourceType) bool {
 	return sourceType == parser.SourcePydantic || sourceType == parser.SourceZod
@@ -72,16 +85,7 @@ func extractPydantic(ctx context.Context, decl parser.Declaration, projectRoot s
 		return ExtractedSchema{}, err
 	}
 
-	workspaceRoot, err := findWorkspaceRoot(
-		filepath.Join("python", "packages", "pydantic-extractor"),
-		workspaceSearchRoots(projectRoot)...,
-	)
-	if err != nil {
-		return ExtractedSchema{}, err
-	}
-
-	workdir := filepath.Join(workspaceRoot, "python")
-	args := []string{"run", "valbridge-pydantic-extractor", target}
+	args := []string{target}
 	if decl.ModuleRoot != "" {
 		args = append(args, "--module-root", resolveRelativeToConfig(decl.ConfigPath, decl.ModuleRoot))
 	}
@@ -98,7 +102,11 @@ func extractPydantic(ctx context.Context, decl parser.Declaration, projectRoot s
 		args = append(args, "--stub-module", moduleName)
 	}
 
-	payload, err := runExtractorCommand(ctx, workdir, "uv", args)
+	candidates, err := buildPydanticExtractorCandidates(projectRoot, args)
+	if err != nil {
+		return ExtractedSchema{}, err
+	}
+	payload, err := runExtractorCandidates(ctx, candidates)
 	if err != nil {
 		return ExtractedSchema{}, err
 	}
@@ -114,22 +122,11 @@ func extractZod(ctx context.Context, decl parser.Declaration, projectRoot string
 	}
 
 	absModulePath := resolveRelativeToConfig(decl.ConfigPath, modulePath)
-	workspaceRoot, err := findWorkspaceRoot(
-		filepath.Join("typescript", "packages", "zod-extractor"),
-		workspaceSearchRoots(projectRoot)...,
-	)
+	candidates, err := buildZodExtractorCandidates(projectRoot, absModulePath, decl.Export, decl.Runner)
 	if err != nil {
 		return ExtractedSchema{}, err
 	}
-
-	workdir := filepath.Join(workspaceRoot, "typescript")
-
-	cmdName, args, err := buildZodCommand(workspaceRoot, absModulePath, decl.Export, decl.Runner)
-	if err != nil {
-		return ExtractedSchema{}, err
-	}
-
-	payload, err := runExtractorCommand(ctx, workdir, cmdName, args)
+	payload, err := runExtractorCandidates(ctx, candidates)
 	if err != nil {
 		return ExtractedSchema{}, err
 	}
@@ -159,6 +156,23 @@ func buildExtractedSchema(
 		},
 		Diagnostics: payload.Diagnostics,
 	}, nil
+}
+
+func runExtractorCandidates(ctx context.Context, candidates []commandCandidate) (extractorPayload, error) {
+	if len(candidates) == 0 {
+		return extractorPayload{}, fmt.Errorf("no extractor command candidates available")
+	}
+
+	var errors []string
+	for _, candidate := range candidates {
+		payload, err := runExtractorCommand(ctx, candidate.Dir, candidate.Cmd, candidate.Args)
+		if err == nil {
+			return payload, nil
+		}
+		errors = append(errors, fmt.Sprintf("%s: %v", candidate.Label, err))
+	}
+
+	return extractorPayload{}, fmt.Errorf("%s", strings.Join(errors, "\n"))
 }
 
 func runExtractorCommand(
@@ -196,6 +210,68 @@ func runExtractorCommand(
 	return payload, nil
 }
 
+func buildPydanticExtractorCandidates(projectRoot string, args []string) ([]commandCandidate, error) {
+	return buildExtractorCandidates(
+		config.WorkspaceRoot() != "" || config.PreferWorkspace(),
+		func() (commandCandidate, error) {
+			return buildWorkspacePydanticExtractorCandidate(projectRoot, args)
+		},
+		func() (commandCandidate, error) {
+			return buildPublishedPydanticExtractorCandidate(args)
+		},
+	)
+}
+
+func buildWorkspacePydanticExtractorCandidate(projectRoot string, args []string) (commandCandidate, error) {
+	workspaceRoot, err := resolveWorkspaceRoot(
+		projectRoot,
+		filepath.Join("python", "packages", "pydantic-extractor"),
+	)
+	if err != nil {
+		return commandCandidate{}, err
+	}
+
+	return commandCandidate{
+		Label: "workspace-python-extractor",
+		Dir:   filepath.Join(workspaceRoot, "python"),
+		Cmd:   "uv",
+		Args:  append([]string{"run", publishedPydanticExtractorPackage}, args...),
+	}, nil
+}
+
+func buildPublishedPydanticExtractorCandidate(args []string) (commandCandidate, error) {
+	packageRef := config.PublishedPackageRef(
+		config.EnvPydanticExtractorPackage,
+		publishedPydanticExtractorPackage,
+	)
+
+	switch {
+	case commandExists("uvx"):
+		return commandCandidate{
+			Label: "published-python-extractor-uvx",
+			Cmd:   "uvx",
+			Args:  append([]string{packageRef}, args...),
+		}, nil
+	case commandExists("uv"):
+		return commandCandidate{
+			Label: "published-python-extractor-uv-tool-run",
+			Cmd:   "uv",
+			Args:  append([]string{"tool", "run", packageRef}, args...),
+		}, nil
+	case commandExists("pipx"):
+		return commandCandidate{
+			Label: "published-python-extractor-pipx-run",
+			Cmd:   "pipx",
+			Args:  append([]string{"run", packageRef}, args...),
+		}, nil
+	default:
+		return commandCandidate{}, fmt.Errorf(
+			"no published python extractor runner available for %q; install uv/uvx or pipx",
+			packageRef,
+		)
+	}
+}
+
 func buildZodCommand(
 	projectRoot string,
 	modulePath string,
@@ -218,6 +294,118 @@ func buildZodCommand(
 		return "node", []string{distScript, "--module-path", modulePath, "--export-name", exportName}, nil
 	default:
 		return "", nil, fmt.Errorf("unsupported zod runner %q", runner)
+	}
+}
+
+func buildZodExtractorCandidates(
+	projectRoot string,
+	modulePath string,
+	exportName string,
+	runner string,
+) ([]commandCandidate, error) {
+	return buildExtractorCandidates(
+		config.WorkspaceRoot() != "" || config.PreferWorkspace(),
+		func() (commandCandidate, error) {
+			return buildWorkspaceZodExtractorCandidate(projectRoot, modulePath, exportName, runner)
+		},
+		func() (commandCandidate, error) {
+			return buildPublishedZodExtractorCandidate(modulePath, exportName)
+		},
+	)
+}
+
+func buildExtractorCandidates(
+	addWorkspaceFirst bool,
+	buildWorkspace func() (commandCandidate, error),
+	buildPublished func() (commandCandidate, error),
+) ([]commandCandidate, error) {
+	var candidates []commandCandidate
+	var resolutionErrors []string
+
+	if addWorkspaceFirst {
+		candidate, err := buildWorkspace()
+		if err != nil {
+			resolutionErrors = append(resolutionErrors, err.Error())
+		} else {
+			candidates = append(candidates, candidate)
+		}
+	}
+
+	if candidate, err := buildPublished(); err == nil {
+		candidates = append(candidates, candidate)
+	} else {
+		resolutionErrors = append(resolutionErrors, err.Error())
+	}
+
+	if !addWorkspaceFirst {
+		candidate, err := buildWorkspace()
+		if err == nil {
+			candidates = append(candidates, candidate)
+		}
+	}
+
+	if len(candidates) == 0 {
+		return nil, fmt.Errorf("%s", strings.Join(resolutionErrors, "\n"))
+	}
+
+	return candidates, nil
+}
+
+func buildWorkspaceZodExtractorCandidate(
+	projectRoot string,
+	modulePath string,
+	exportName string,
+	runner string,
+) (commandCandidate, error) {
+	workspaceRoot, err := resolveWorkspaceRoot(
+		projectRoot,
+		filepath.Join("typescript", "packages", "zod-extractor"),
+	)
+	if err != nil {
+		return commandCandidate{}, err
+	}
+
+	cmdName, args, err := buildZodCommand(workspaceRoot, modulePath, exportName, runner)
+	if err != nil {
+		return commandCandidate{}, err
+	}
+
+	return commandCandidate{
+		Label: "workspace-zod-extractor",
+		Dir:   filepath.Join(workspaceRoot, "typescript"),
+		Cmd:   cmdName,
+		Args:  args,
+	}, nil
+}
+
+func buildPublishedZodExtractorCandidate(
+	modulePath string,
+	exportName string,
+) (commandCandidate, error) {
+	packageRef := config.PublishedPackageRef(
+		config.EnvZodExtractorPackage,
+		publishedZodExtractorPackage,
+	)
+	args := []string{"--module-path", modulePath, "--export-name", exportName}
+
+	switch {
+	case commandExists("pnpm"):
+		return commandCandidate{
+			Label: "published-zod-extractor-pnpm-dlx",
+			Cmd:   "pnpm",
+			Args:  append([]string{"dlx", packageRef}, args...),
+		}, nil
+	case commandExists("npx"):
+		return commandCandidate{
+			Label: "published-zod-extractor-npx",
+			Cmd:   "npx",
+			Args:  append([]string{"-y", packageRef}, args...),
+		}, nil
+	default:
+		return commandCandidate{}, fmt.Errorf(
+			"no published typescript extractor runner available for %q; install pnpm or npm/npx",
+			packageRef,
+		)
 	}
 }
 
@@ -273,6 +461,21 @@ func workspaceSearchRoots(projectRoot string) []string {
 	return deduped
 }
 
+func resolveWorkspaceRoot(projectRoot string, relativeProbe string) (string, error) {
+	if explicitRoot := config.WorkspaceRoot(); explicitRoot != "" {
+		if _, err := os.Stat(filepath.Join(explicitRoot, relativeProbe)); err == nil {
+			return explicitRoot, nil
+		}
+		return "", fmt.Errorf(
+			"explicit workspace root %q does not contain %q",
+			explicitRoot,
+			relativeProbe,
+		)
+	}
+
+	return findWorkspaceRoot(relativeProbe, workspaceSearchRoots(projectRoot)...)
+}
+
 func findWorkspaceRoot(relativeProbe string, searchRoots ...string) (string, error) {
 	tried := make([]string, 0, len(searchRoots))
 	for _, root := range searchRoots {
@@ -299,4 +502,9 @@ func findWorkspaceRoot(relativeProbe string, searchRoots ...string) (string, err
 		relativeProbe,
 		strings.Join(tried, ", "),
 	)
+}
+
+func commandExists(name string) bool {
+	_, err := exec.LookPath(name)
+	return err == nil
 }
