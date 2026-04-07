@@ -17,6 +17,20 @@ on:
           - pydantic
           - pydantic-extractor
           - pydantic-bridge
+      manual_npm_package:
+        description: npm package to publish
+        required: false
+        type: choice
+        options:
+          - core
+          - client
+          - zod
+          - zod-extractor
+          - zod-bridge
+      manual_source_ref:
+        description: Git ref to check out for manual publish
+        required: false
+        type: string
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -259,3 +273,63 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ steps.pkg.outputs.package_dir }}/dist
+
+  manual-release-ts:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.manual_npm_package != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Resolve package directory
+        id: pkg
+        run: |
+          case "${{ github.event.inputs.manual_npm_package }}" in
+            core)
+              echo "package_dir=typescript/packages/core" >>"$GITHUB_OUTPUT"
+              ;;
+            client)
+              echo "package_dir=typescript/packages/client" >>"$GITHUB_OUTPUT"
+              ;;
+            zod)
+              echo "package_dir=typescript/packages/adapters/zod" >>"$GITHUB_OUTPUT"
+              ;;
+            zod-extractor)
+              echo "package_dir=typescript/packages/zod-extractor" >>"$GITHUB_OUTPUT"
+              ;;
+            zod-bridge)
+              echo "package_dir=typescript/packages/zod-bridge" >>"$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported package: ${{ github.event.inputs.manual_npm_package }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: typescript
+
+      - name: Build packages
+        run: pnpm run build
+        working-directory: typescript
+
+      - name: Typecheck packages
+        run: pnpm run typecheck
+        working-directory: typescript
+
+      - name: Publish to npm
+        run: pnpm publish --no-git-checks --access public
+        working-directory: ${{ steps.pkg.outputs.package_dir }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
