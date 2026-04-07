@@ -90,12 +90,13 @@ func detectHarnessRunner(dir string) (string, []string, error) {
 	}
 
 	// Transform package runner to file runner:
-	// npx/pnpm/yarn → use tsx (tsx runs .ts files)
+	// Use the workspace-installed tsx where possible so local harness files
+	// resolve relative imports against the adapter package correctly.
 	switch cmd {
 	case "npx":
 		return "npx", []string{"tsx"}, nil
 	case "pnpm":
-		return "pnpm", []string{"dlx", "tsx"}, nil
+		return "pnpm", []string{"exec", "tsx"}, nil
 	case "yarn":
 		return "yarn", []string{"dlx", "tsx"}, nil
 	default:

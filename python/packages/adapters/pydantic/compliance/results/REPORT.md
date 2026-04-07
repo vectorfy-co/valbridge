@@ -4,12 +4,12 @@
 
 | Draft | Passed | Failed | Skipped | Unsupported | Coverage |
 | ----- | ------ | ------ | ------- | ----------- | -------- |
-| draft2019-09 | 1050 | 2 | 0 | 182 | 99.8% |
-| draft2020-12 | 1064 | 2 | 0 | 205 | 99.8% |
-| draft3 | 431 | 1 | 0 | 2 | 99.8% |
-| draft4 | 608 | 1 | 0 | 4 | 99.8% |
-| draft6 | 826 | 2 | 0 | 4 | 99.8% |
-| draft7 | 910 | 2 | 0 | 4 | 99.8% |
+| draft2019-09 | 1032 | 2 | 0 | 200 | 99.8% |
+| draft2020-12 | 1046 | 2 | 0 | 223 | 99.8% |
+| draft3 | 428 | 1 | 0 | 5 | 99.8% |
+| draft4 | 605 | 1 | 0 | 7 | 99.8% |
+| draft6 | 823 | 2 | 0 | 7 | 99.8% |
+| draft7 | 907 | 2 | 0 | 7 | 99.8% |
 
 ## Badges
 
@@ -62,12 +62,12 @@
 | properties | ✅ | 28/28 |
 | propertyNames | ✅ | 20/20 |
 | recursiveRef | ✅ | 0/0 |
-| ref | ⚠️ | 75/77 |
+| ref | ⚠️ | 59/61 |
 | refRemote | ✅ | 31/31 |
 | required | ✅ | 16/16 |
 | type | ✅ | 80/80 |
 | unevaluatedItems | ✅ | 14/14 |
-| unevaluatedProperties | ✅ | 25/25 |
+| unevaluatedProperties | ✅ | 23/23 |
 | uniqueItems | ✅ | 69/69 |
 | vocabulary | ✅ | 5/5 |
 
@@ -146,6 +146,42 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft2019-09/ref/ref applies alongside sibling keywords/ref invalid`
+- `draft2019-09/ref/ref applies alongside sibling keywords/ref valid, maxItems invalid`
+- `draft2019-09/ref/ref applies alongside sibling keywords/ref valid, maxItems valid`
+
+</details>
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root) (21 tests)</summary>
+
+- `draft2019-09/ref/ref creates new scope when adjacent to keywords/referenced subschema doesn't see annotations from properties`
+- `draft2019-09/ref/ref to else/a non-integer is invalid due to the $ref`
+- `draft2019-09/ref/ref to else/an integer is valid`
+- `draft2019-09/ref/ref to if/a non-integer is invalid due to the $ref`
+- `draft2019-09/ref/ref to if/an integer is valid`
+- `draft2019-09/ref/ref to then/a non-integer is invalid due to the $ref`
+- `draft2019-09/ref/ref to then/an integer is valid`
+- `draft2019-09/ref/refs with relative uris and defs/invalid on inner field`
+- `draft2019-09/ref/refs with relative uris and defs/invalid on outer field`
+- `draft2019-09/ref/refs with relative uris and defs/valid on both fields`
+- `draft2019-09/ref/relative refs with absolute uris and defs/invalid on inner field`
+- `draft2019-09/ref/relative refs with absolute uris and defs/invalid on outer field`
+- `draft2019-09/ref/relative refs with absolute uris and defs/valid on both fields`
+- `draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with no unevaluated items`
+- `draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with unevaluated items`
+- `draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with no unevaluated items`
+- `draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with unevaluated items`
+- `draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with no unevaluated properties`
+- `draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with unevaluated properties`
+- `draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with no unevaluated properties`
+- `draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with unevaluated properties`
+
+</details>
+
+<details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (4 tests)</summary>
 
 - `draft2019-09/defs/validate definition against metaschema/invalid definition schema`
@@ -163,23 +199,11 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
-<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at /properties/foo) (2 tests)</summary>
-
-- `draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/no extra items`
-- `draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/uncle keyword evaluation is not significant`
-
-</details>
-
-<details>
-<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root) (37 tests)</summary>
+<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root) (33 tests)</summary>
 
 - `draft2019-09/unevaluatedItems/Evaluated items collection needs to consider instance location/with an unevaluated item that exists at another location`
-- `draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with no unevaluated items`
-- `draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with unevaluated items`
 - `draft2019-09/unevaluatedItems/unevaluatedItems can see annotations from if without then and else/invalid in case if is evaluated`
 - `draft2019-09/unevaluatedItems/unevaluatedItems can see annotations from if without then and else/valid in case if is evaluated`
-- `draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with no unevaluated items`
-- `draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with unevaluated items`
 - `draft2019-09/unevaluatedItems/unevaluatedItems with anyOf/when one schema matches and has no unevaluated items`
 - `draft2019-09/unevaluatedItems/unevaluatedItems with anyOf/when one schema matches and has unevaluated items`
 - `draft2019-09/unevaluatedItems/unevaluatedItems with anyOf/when two schemas match and has no unevaluated items`
@@ -257,6 +281,16 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
+<summary>unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties) (4 tests)</summary>
+
+- `draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/no extra items`
+- `draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/uncle keyword evaluation is not significant`
+- `draft2019-09/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/no extra properties`
+- `draft2019-09/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/uncle keyword evaluation is not significant`
+
+</details>
+
+<details>
 <summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at /not) (2 tests)</summary>
 
 - `draft2019-09/not/collect annotations inside a 'not', even if collection is disabled/annotations are still collected inside a 'not'`
@@ -265,7 +299,7 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
-<summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root) (77 tests)</summary>
+<summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root) (73 tests)</summary>
 
 - `draft2019-09/unevaluatedProperties/dependentSchemas with unevaluatedProperties/unevaluatedProperties doesn't consider dependentSchemas`
 - `draft2019-09/unevaluatedProperties/dependentSchemas with unevaluatedProperties/unevaluatedProperties doesn't see bar when foo2 is absent`
@@ -307,12 +341,8 @@ These tests are intentionally excluded due to documented limitations.
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/a and x are valid`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/a and y are valid`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/x and y are invalid`
-- `draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with no unevaluated properties`
-- `draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with unevaluated properties`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties can see annotations from if without then and else/invalid in case if is evaluated`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties can see annotations from if without then and else/valid in case if is evaluated`
-- `draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with no unevaluated properties`
-- `draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with unevaluated properties`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties with anyOf/when one matches and has no unevaluated properties`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties with anyOf/when one matches and has unevaluated properties`
 - `draft2019-09/unevaluatedProperties/unevaluatedProperties with anyOf/when two match and has no unevaluated properties`
@@ -403,12 +433,12 @@ These tests are intentionally excluded due to documented limitations.
 | prefixItems | ✅ | 11/11 |
 | properties | ✅ | 28/28 |
 | propertyNames | ✅ | 20/20 |
-| ref | ⚠️ | 75/77 |
+| ref | ⚠️ | 59/61 |
 | refRemote | ✅ | 31/31 |
 | required | ✅ | 16/16 |
 | type | ✅ | 80/80 |
 | unevaluatedItems | ✅ | 14/14 |
-| unevaluatedProperties | ✅ | 27/27 |
+| unevaluatedProperties | ✅ | 25/25 |
 | uniqueItems | ✅ | 69/69 |
 | vocabulary | ✅ | 5/5 |
 
@@ -543,6 +573,42 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft2020-12/ref/ref applies alongside sibling keywords/ref invalid`
+- `draft2020-12/ref/ref applies alongside sibling keywords/ref valid, maxItems invalid`
+- `draft2020-12/ref/ref applies alongside sibling keywords/ref valid, maxItems valid`
+
+</details>
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root) (21 tests)</summary>
+
+- `draft2020-12/ref/ref creates new scope when adjacent to keywords/referenced subschema doesn't see annotations from properties`
+- `draft2020-12/ref/ref to else/a non-integer is invalid due to the $ref`
+- `draft2020-12/ref/ref to else/an integer is valid`
+- `draft2020-12/ref/ref to if/a non-integer is invalid due to the $ref`
+- `draft2020-12/ref/ref to if/an integer is valid`
+- `draft2020-12/ref/ref to then/a non-integer is invalid due to the $ref`
+- `draft2020-12/ref/ref to then/an integer is valid`
+- `draft2020-12/ref/refs with relative uris and defs/invalid on inner field`
+- `draft2020-12/ref/refs with relative uris and defs/invalid on outer field`
+- `draft2020-12/ref/refs with relative uris and defs/valid on both fields`
+- `draft2020-12/ref/relative refs with absolute uris and defs/invalid on inner field`
+- `draft2020-12/ref/relative refs with absolute uris and defs/invalid on outer field`
+- `draft2020-12/ref/relative refs with absolute uris and defs/valid on both fields`
+- `draft2020-12/unevaluatedItems/unevaluatedItems before $ref/with no unevaluated items`
+- `draft2020-12/unevaluatedItems/unevaluatedItems before $ref/with unevaluated items`
+- `draft2020-12/unevaluatedItems/unevaluatedItems with $ref/with no unevaluated items`
+- `draft2020-12/unevaluatedItems/unevaluatedItems with $ref/with unevaluated items`
+- `draft2020-12/unevaluatedProperties/unevaluatedProperties before $ref/with no unevaluated properties`
+- `draft2020-12/unevaluatedProperties/unevaluatedProperties before $ref/with unevaluated properties`
+- `draft2020-12/unevaluatedProperties/unevaluatedProperties with $ref/with no unevaluated properties`
+- `draft2020-12/unevaluatedProperties/unevaluatedProperties with $ref/with unevaluated properties`
+
+</details>
+
+<details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (4 tests)</summary>
 
 - `draft2020-12/defs/validate definition against metaschema/invalid definition schema`
@@ -560,15 +626,7 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
-<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at /properties/foo) (2 tests)</summary>
-
-- `draft2020-12/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/no extra items`
-- `draft2020-12/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/uncle keyword evaluation is not significant`
-
-</details>
-
-<details>
-<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root) (52 tests)</summary>
+<summary>unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root) (48 tests)</summary>
 
 - `draft2020-12/unevaluatedItems/Evaluated items collection needs to consider instance location/with an unevaluated item that exists at another location`
 - `draft2020-12/unevaluatedItems/unevaluatedItems and contains interact to control item dependency relationship/a's and b's are valid`
@@ -579,8 +637,6 @@ These tests are intentionally excluded due to documented limitations.
 - `draft2020-12/unevaluatedItems/unevaluatedItems and contains interact to control item dependency relationship/only b's and c's are invalid`
 - `draft2020-12/unevaluatedItems/unevaluatedItems and contains interact to control item dependency relationship/only b's are invalid`
 - `draft2020-12/unevaluatedItems/unevaluatedItems and contains interact to control item dependency relationship/only c's are invalid`
-- `draft2020-12/unevaluatedItems/unevaluatedItems before $ref/with no unevaluated items`
-- `draft2020-12/unevaluatedItems/unevaluatedItems before $ref/with unevaluated items`
 - `draft2020-12/unevaluatedItems/unevaluatedItems can see annotations from if without then and else/invalid in case if is evaluated`
 - `draft2020-12/unevaluatedItems/unevaluatedItems can see annotations from if without then and else/valid in case if is evaluated`
 - `draft2020-12/unevaluatedItems/unevaluatedItems depends on adjacent contains/contains fails, second item is not evaluated`
@@ -588,8 +644,6 @@ These tests are intentionally excluded due to documented limitations.
 - `draft2020-12/unevaluatedItems/unevaluatedItems depends on adjacent contains/second item is evaluated by contains`
 - `draft2020-12/unevaluatedItems/unevaluatedItems depends on multiple nested contains/5 not evaluated, passes unevaluatedItems`
 - `draft2020-12/unevaluatedItems/unevaluatedItems depends on multiple nested contains/7 not evaluated, fails unevaluatedItems`
-- `draft2020-12/unevaluatedItems/unevaluatedItems with $ref/with no unevaluated items`
-- `draft2020-12/unevaluatedItems/unevaluatedItems with $ref/with unevaluated items`
 - `draft2020-12/unevaluatedItems/unevaluatedItems with anyOf/when one schema matches and has no unevaluated items`
 - `draft2020-12/unevaluatedItems/unevaluatedItems with anyOf/when one schema matches and has unevaluated items`
 - `draft2020-12/unevaluatedItems/unevaluatedItems with anyOf/when two schemas match and has no unevaluated items`
@@ -669,6 +723,16 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
+<summary>unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties) (4 tests)</summary>
+
+- `draft2020-12/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/no extra items`
+- `draft2020-12/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/uncle keyword evaluation is not significant`
+- `draft2020-12/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/no extra properties`
+- `draft2020-12/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/uncle keyword evaluation is not significant`
+
+</details>
+
+<details>
 <summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at /not) (2 tests)</summary>
 
 - `draft2020-12/not/collect annotations inside a 'not', even if collection is disabled/annotations are still collected inside a 'not'`
@@ -677,7 +741,7 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 <details>
-<summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root) (77 tests)</summary>
+<summary>unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root) (73 tests)</summary>
 
 - `draft2020-12/unevaluatedProperties/dependentSchemas with unevaluatedProperties/unevaluatedProperties doesn't consider dependentSchemas`
 - `draft2020-12/unevaluatedProperties/dependentSchemas with unevaluatedProperties/unevaluatedProperties doesn't see bar when foo2 is absent`
@@ -719,12 +783,8 @@ These tests are intentionally excluded due to documented limitations.
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/a and x are valid`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/a and y are valid`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/x and y are invalid`
-- `draft2020-12/unevaluatedProperties/unevaluatedProperties before $ref/with no unevaluated properties`
-- `draft2020-12/unevaluatedProperties/unevaluatedProperties before $ref/with unevaluated properties`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties can see annotations from if without then and else/invalid in case if is evaluated`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties can see annotations from if without then and else/valid in case if is evaluated`
-- `draft2020-12/unevaluatedProperties/unevaluatedProperties with $ref/with no unevaluated properties`
-- `draft2020-12/unevaluatedProperties/unevaluatedProperties with $ref/with unevaluated properties`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties with anyOf/when one matches and has no unevaluated properties`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties with anyOf/when one matches and has unevaluated properties`
 - `draft2020-12/unevaluatedProperties/unevaluatedProperties with anyOf/when two match and has no unevaluated properties`
@@ -797,7 +857,7 @@ These tests are intentionally excluded due to documented limitations.
 | pattern | ✅ | 9/9 |
 | patternProperties | ✅ | 17/17 |
 | properties | ✅ | 15/15 |
-| ref | ⚠️ | 24/25 |
+| ref | ⚠️ | 21/22 |
 | refRemote | ✅ | 8/8 |
 | required | ✅ | 4/4 |
 | type | ✅ | 80/80 |
@@ -806,6 +866,15 @@ These tests are intentionally excluded due to documented limitations.
 ### Unsupported Features
 
 These tests are intentionally excluded due to documented limitations.
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft3/ref/ref overrides any sibling keywords/ref invalid`
+- `draft3/ref/ref overrides any sibling keywords/remote ref valid`
+- `draft3/ref/ref overrides any sibling keywords/remote ref valid, maxItems ignored`
+
+</details>
 
 <details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (2 tests)</summary>
@@ -855,7 +924,7 @@ These tests are intentionally excluded due to documented limitations.
 | pattern | ✅ | 9/9 |
 | patternProperties | ✅ | 18/18 |
 | properties | ✅ | 24/24 |
-| ref | ⚠️ | 42/43 |
+| ref | ⚠️ | 39/40 |
 | refRemote | ✅ | 17/17 |
 | required | ✅ | 15/15 |
 | type | ✅ | 79/79 |
@@ -864,6 +933,15 @@ These tests are intentionally excluded due to documented limitations.
 ### Unsupported Features
 
 These tests are intentionally excluded due to documented limitations.
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft4/ref/ref overrides any sibling keywords/ref invalid`
+- `draft4/ref/ref overrides any sibling keywords/ref valid`
+- `draft4/ref/ref overrides any sibling keywords/ref valid, maxItems ignored`
+
+</details>
 
 <details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (4 tests)</summary>
@@ -921,7 +999,7 @@ These tests are intentionally excluded due to documented limitations.
 | patternProperties | ✅ | 23/23 |
 | properties | ✅ | 28/28 |
 | propertyNames | ✅ | 20/20 |
-| ref | ⚠️ | 66/68 |
+| ref | ⚠️ | 63/65 |
 | refRemote | ✅ | 23/23 |
 | required | ✅ | 16/16 |
 | type | ✅ | 80/80 |
@@ -930,6 +1008,15 @@ These tests are intentionally excluded due to documented limitations.
 ### Unsupported Features
 
 These tests are intentionally excluded due to documented limitations.
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft6/ref/ref overrides any sibling keywords/ref invalid`
+- `draft6/ref/ref overrides any sibling keywords/ref valid`
+- `draft6/ref/ref overrides any sibling keywords/ref valid, maxItems ignored`
+
+</details>
 
 <details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (4 tests)</summary>
@@ -991,7 +1078,7 @@ These tests are intentionally excluded due to documented limitations.
 | patternProperties | ✅ | 23/23 |
 | properties | ✅ | 28/28 |
 | propertyNames | ✅ | 20/20 |
-| ref | ⚠️ | 74/76 |
+| ref | ⚠️ | 71/73 |
 | refRemote | ✅ | 23/23 |
 | required | ✅ | 16/16 |
 | type | ✅ | 80/80 |
@@ -1000,6 +1087,15 @@ These tests are intentionally excluded due to documented limitations.
 ### Unsupported Features
 
 These tests are intentionally excluded due to documented limitations.
+
+<details>
+<summary>$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo) (3 tests)</summary>
+
+- `draft7/ref/ref overrides any sibling keywords/ref invalid`
+- `draft7/ref/ref overrides any sibling keywords/ref valid`
+- `draft7/ref/ref overrides any sibling keywords/ref valid, maxItems ignored`
+
+</details>
 
 <details>
 <summary>$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root) (4 tests)</summary>
