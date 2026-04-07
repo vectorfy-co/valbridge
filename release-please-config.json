@@ -17,6 +17,14 @@
       "release-type": "node",
       "component": "ts-zod"
     },
+    "typescript/packages/zod-extractor": {
+      "release-type": "node",
+      "component": "ts-zod-extractor"
+    },
+    "typescript/packages/zod-bridge": {
+      "release-type": "node",
+      "component": "ts-zod-bridge"
+    },
     "python/packages/core": {
       "release-type": "python",
       "component": "py-core"
@@ -28,6 +36,14 @@
     "python/packages/adapters/pydantic": {
       "release-type": "python",
       "component": "py-pydantic"
+    },
+    "python/packages/pydantic-extractor": {
+      "release-type": "python",
+      "component": "py-pydantic-extractor"
+    },
+    "python/packages/pydantic-bridge": {
+      "release-type": "python",
+      "component": "py-pydantic-bridge"
     }
   },
   "separate-pull-requests": true,
