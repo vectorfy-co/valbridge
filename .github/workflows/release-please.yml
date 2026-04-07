@@ -83,12 +83,16 @@ jobs:
       needs.release-please.outputs.ts-zod-extractor--release_created == 'true' ||
       needs.release-please.outputs.ts-zod-bridge--release_created == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
 
       - uses: pnpm/action-setup@v4
         with:
@@ -108,38 +112,28 @@ jobs:
 
       - name: Publish @vectorfyco/valbridge-core
         if: needs.release-please.outputs.ts-core--release_created == 'true'
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: typescript/packages/core
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vectorfyco/valbridge
         if: needs.release-please.outputs.ts-client--release_created == 'true'
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: typescript/packages/client
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vectorfyco/valbridge-zod
         if: needs.release-please.outputs.ts-zod--release_created == 'true'
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: typescript/packages/adapters/zod
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vectorfyco/valbridge-zod-extractor
         if: needs.release-please.outputs.ts-zod-extractor--release_created == 'true'
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: typescript/packages/zod-extractor
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @vectorfyco/valbridge-zod-bridge
         if: needs.release-please.outputs.ts-zod-bridge--release_created == 'true'
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: typescript/packages/zod-bridge
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   release-py:
     needs: release-please
@@ -277,14 +271,17 @@ jobs:
   manual-release-ts:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.manual_npm_package != '' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: "22"
+          node-version: "24"
           registry-url: https://registry.npmjs.org
 
       - uses: pnpm/action-setup@v4
@@ -329,7 +326,5 @@ jobs:
         working-directory: typescript
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --access public
+        run: npm publish --access public
         working-directory: ${{ steps.pkg.outputs.package_dir }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
