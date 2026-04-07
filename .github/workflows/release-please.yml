@@ -116,27 +116,27 @@ jobs:
 
       - name: Publish @vectorfyco/valbridge-core
         if: needs.release-please.outputs.ts-core--release_created == 'true'
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: typescript/packages/core
 
       - name: Publish @vectorfyco/valbridge
         if: needs.release-please.outputs.ts-client--release_created == 'true'
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: typescript/packages/client
 
       - name: Publish @vectorfyco/valbridge-zod
         if: needs.release-please.outputs.ts-zod--release_created == 'true'
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: typescript/packages/adapters/zod
 
       - name: Publish @vectorfyco/valbridge-zod-extractor
         if: needs.release-please.outputs.ts-zod-extractor--release_created == 'true'
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: typescript/packages/zod-extractor
 
       - name: Publish @vectorfyco/valbridge-zod-bridge
         if: needs.release-please.outputs.ts-zod-bridge--release_created == 'true'
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: typescript/packages/zod-bridge
 
   release-py:
@@ -338,7 +338,7 @@ jobs:
         working-directory: typescript
 
       - name: Publish to npm
-        run: npm publish --access public
+        run: pnpm publish --access public --no-git-checks
         working-directory: ${{ steps.pkg.outputs.package_dir }}
 
   manual-release-bundle-ts:
@@ -388,7 +388,7 @@ jobs:
             fi
 
             echo "Publishing ${package_name}@${package_version}"
-            (cd "${package_dir}" && npm publish --access public)
+            (cd "${package_dir}" && pnpm publish --access public --no-git-checks)
           }
 
           publish_if_missing "typescript/packages/core"
