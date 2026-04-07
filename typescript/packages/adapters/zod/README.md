@@ -12,9 +12,9 @@ See [compliance/results/REPORT.md](./compliance/results/REPORT.md) for detailed 
 pnpm add @vectorfyco/valbridge-zod zod
 ```
 
-Supported Zod range: `^3.25.0 || ^4.0.0`
+Supported Zod range: `^4.0.0`
 
-Verified in CI against `zod 3.25.x` and `zod 4.3.6`.
+Verified in CI against `zod 4.3.6`.
 
 ## Usage
 
@@ -66,7 +66,7 @@ pnpm run typecheck
 # type-fidelity harness (checks for any-leakage regressions)
 pnpm run type-fidelity
 
-# dual-version compatibility checks run in CI against zod 3.25.x and 4.3.6
+# compatibility checks run in CI against zod 4.3.6
 ```
 
 ## Fallback Typing Guardrails

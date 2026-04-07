@@ -8,6 +8,7 @@
  * Run: pnpm exec tsx typescript/packages/adapters/zod/type-probe/type-fidelity.ts
  *   or from adapter dir: pnpm run type-fidelity
  */
+import { writeFile } from "node:fs/promises";
 import ts from "typescript";
 import path from "path";
 import { convert } from "../src/index.js";
@@ -271,7 +272,7 @@ function checkExpectations(extracted: ProbeResult[]): CheckResult[] {
 
 const fixturePath = path.resolve(import.meta.dirname, "probe-fixture.ts");
 const fixtureContent = generateFixture();
-await Bun.write(fixturePath, fixtureContent);
+await writeFile(fixturePath, fixtureContent, "utf8");
 
 const extracted = extractTypes(fixturePath);
 const results = checkExpectations(extracted);

@@ -121,8 +121,15 @@ jobs:
         with:
           go-version: "1.24"
 
-      - uses: oven-sh/setup-bun@v2
-        if: matrix.runtime == 'bun'
+      - uses: actions/setup-node@v4
+        if: matrix.runtime == 'node'
+        with:
+          node-version: "22"
+
+      - uses: pnpm/action-setup@v4
+        if: matrix.runtime == 'node'
+        with:
+          version: 10
 
       - uses: actions/setup-python@v5
         if: matrix.runtime == 'python'

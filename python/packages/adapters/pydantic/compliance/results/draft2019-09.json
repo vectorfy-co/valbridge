@@ -269,10 +269,10 @@
     },
     {
       "keyword": "ref",
-      "passed": 75,
+      "passed": 59,
       "failed": 2,
       "skipped": 0,
-      "total": 77,
+      "total": 61,
       "failures": [
         {
           "group": "root pointer ref",
@@ -320,10 +320,10 @@
     },
     {
       "keyword": "unevaluatedProperties",
-      "passed": 25,
+      "passed": 23,
       "failed": 0,
       "skipped": 0,
-      "total": 25
+      "total": 23
     },
     {
       "keyword": "uniqueItems",
@@ -341,13 +341,13 @@
     }
   ],
   "summary": {
-    "passed": 1050,
+    "passed": 1032,
     "failed": 2,
     "skipped": 0,
-    "total": 1052,
-    "percentage": 99.80988593155894,
+    "total": 1034,
+    "percentage": 99.80657640232108,
     "unsupportedFeatures": {
-      "count": 182,
+      "count": 200,
       "items": [
         {
           "path": "draft2019-09/defs/validate definition against metaschema/invalid definition schema",
@@ -510,6 +510,70 @@
           "reason": "$recursiveAnchor is not supported: Recursive references ($recursiveRef/$recursiveAnchor) require runtime scope tracking (at root)"
         },
         {
+          "path": "draft2019-09/ref/ref applies alongside sibling keywords/ref invalid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
+        },
+        {
+          "path": "draft2019-09/ref/ref applies alongside sibling keywords/ref valid, maxItems invalid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
+        },
+        {
+          "path": "draft2019-09/ref/ref applies alongside sibling keywords/ref valid, maxItems valid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
+        },
+        {
+          "path": "draft2019-09/ref/ref creates new scope when adjacent to keywords/referenced subschema doesn't see annotations from properties",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to else/a non-integer is invalid due to the $ref",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to else/an integer is valid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to if/a non-integer is invalid due to the $ref",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to if/an integer is valid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to then/a non-integer is invalid due to the $ref",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/ref to then/an integer is valid",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/refs with relative uris and defs/invalid on inner field",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/refs with relative uris and defs/invalid on outer field",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/refs with relative uris and defs/valid on both fields",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/relative refs with absolute uris and defs/invalid on inner field",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/relative refs with absolute uris and defs/invalid on outer field",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
+          "path": "draft2019-09/ref/relative refs with absolute uris and defs/valid on both fields",
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
+        },
+        {
           "path": "draft2019-09/ref/remote ref, containing refs itself/remote ref invalid",
           "reason": "$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root)"
         },
@@ -523,19 +587,19 @@
         },
         {
           "path": "draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/no extra items",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at /properties/foo)"
+          "reason": "unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/item is evaluated in an uncle schema to unevaluatedItems/uncle keyword evaluation is not significant",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at /properties/foo)"
+          "reason": "unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with no unevaluated items",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems before $ref/with unevaluated items",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems can see annotations from if without then and else/invalid in case if is evaluated",
@@ -559,11 +623,11 @@
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with no unevaluated items",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems with $ref/with unevaluated items",
-          "reason": "unevaluatedItems is not supported: requires annotation tracking when combined with applicators (prefixItems, contains, allOf, anyOf, oneOf, if) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedItems/unevaluatedItems with anyOf/when one schema matches and has no unevaluated items",
@@ -854,6 +918,14 @@
           "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
         },
         {
+          "path": "draft2019-09/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/no extra properties",
+          "reason": "unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties)"
+        },
+        {
+          "path": "draft2019-09/unevaluatedProperties/property is evaluated in an uncle schema to unevaluatedProperties/uncle keyword evaluation is not significant",
+          "reason": "unevaluatedProperties is not supported: nested unevaluatedProperties/unevaluatedItems under a parent applicator requires cross-scope annotation tracking (at /properties)"
+        },
+        {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties + ref inside allOf / oneOf/Empty is invalid (no x or y)",
           "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
         },
@@ -915,11 +987,11 @@
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with no unevaluated properties",
-          "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties before $ref/with unevaluated properties",
-          "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties can see annotations from if without then and else/invalid in case if is evaluated",
@@ -947,11 +1019,11 @@
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with no unevaluated properties",
-          "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties with $ref/with unevaluated properties",
-          "reason": "unevaluatedProperties is not supported: requires annotation tracking when combined with applicators (allOf, anyOf, oneOf, if, $ref, dependentSchemas, not) (at root)"
+          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at root)"
         },
         {
           "path": "draft2019-09/unevaluatedProperties/unevaluatedProperties with anyOf/when one matches and has no unevaluated properties",
