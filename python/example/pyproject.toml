@@ -1,11 +1,11 @@
 [project]
 name = "valbridge-python-example"
-version = "0.1.0"
+version = "0.4.0"
 description = "Example project demonstrating Python valbridge usage"
 requires-python = ">=3.12"
 dependencies = [
-    "valbridge-pydantic",
-    "valbridge",
+    "valbridge-pydantic>=0.4.0,<0.5.0",
+    "valbridge>=0.4.0,<0.5.0",
 ]
 
 [project.scripts]
