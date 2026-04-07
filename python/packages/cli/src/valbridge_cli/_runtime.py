@@ -4,6 +4,7 @@ import importlib.metadata
 import os
 import platform
 import stat
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -25,7 +26,7 @@ def _platform_info() -> tuple[str, str, str]:
     else:
         raise RuntimeError(f"Unsupported valbridge CLI architecture: {machine}")
 
-    if sys_platform := os.sys.platform:
+    if sys_platform := sys.platform:
         if sys_platform.startswith("darwin"):
             return "darwin", arch, ""
         if sys_platform.startswith("linux"):
@@ -33,7 +34,7 @@ def _platform_info() -> tuple[str, str, str]:
         if sys_platform.startswith("win"):
             return "windows", arch, ".exe"
 
-    raise RuntimeError(f"Unsupported valbridge CLI platform: {os.sys.platform}")
+    raise RuntimeError(f"Unsupported valbridge CLI platform: {sys.platform}")
 
 
 def _release_asset(version: str) -> tuple[str, str]:

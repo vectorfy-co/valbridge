@@ -234,11 +234,10 @@ jobs:
         env:
           VALBRIDGE_CLI_BIN: ${{ runner.temp }}/valbridge
         run: |
-          pnpm install --no-frozen-lockfile
-          pnpm --filter @vectorfyco/valbridge-cli run build
-          tarball=$(cd packages/cli && pnpm pack --pack-destination "${RUNNER_TEMP}" | tail -n 1)
-          npm exec --yes --package "${RUNNER_TEMP}/${tarball}" valbridge -- --help
-        working-directory: typescript
+          pnpm run build
+          tarball=$(pnpm pack --pack-destination "${RUNNER_TEMP}" | tail -n 1)
+          npm exec --yes --package "${tarball}" valbridge -- --help
+        working-directory: typescript/packages/cli
 
       - name: Smoke test PyPI CLI launcher
         env:
