@@ -3,6 +3,25 @@
 	"version": "0.0.5",
 	"type": "module",
 	"description": "Runtime schema lookup client for generated valbridge TypeScript artifacts",
+	"license": "MIT",
+	"homepage": "https://github.com/vectorfy-co/valbridge",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vectorfy-co/valbridge.git",
+		"directory": "typescript/packages/client"
+	},
+	"bugs": {
+		"url": "https://github.com/vectorfy-co/valbridge/issues"
+	},
+	"keywords": [
+		"valbridge",
+		"runtime-client",
+		"schema-registry",
+		"typescript",
+		"zod",
+		"validation",
+		"generated-code"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",

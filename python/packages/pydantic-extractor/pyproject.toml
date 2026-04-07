@@ -3,10 +3,43 @@ name = "valbridge-pydantic-extractor"
 version = "0.1.0"
 description = "Workspace-local Pydantic extraction utilities for valbridge"
 requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "vectorfyco" }]
+maintainers = [{ name = "vectorfyco" }]
+keywords = [
+    "valbridge",
+    "pydantic",
+    "extractor",
+    "json-schema",
+    "code-generation",
+    "validation",
+    "introspection",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "pydantic>=2.12.0,<2.13.0",
     "valbridge-core",
 ]
+
+[project.urls]
+Homepage = "https://github.com/vectorfy-co/valbridge"
+Documentation = "https://github.com/vectorfy-co/valbridge"
+Repository = "https://github.com/vectorfy-co/valbridge"
+Issues = "https://github.com/vectorfy-co/valbridge/issues"
+Changelog = "https://github.com/vectorfy-co/valbridge/blob/main/CHANGELOG.md"
 
 [project.scripts]
 valbridge-pydantic-extractor = "valbridge_pydantic_extractor.cli:main"

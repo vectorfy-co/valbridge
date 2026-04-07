@@ -3,6 +3,25 @@
 	"version": "0.1.0",
 	"type": "module",
 	"description": "Workspace-local Zod extraction utilities for valbridge",
+	"license": "MIT",
+	"homepage": "https://github.com/vectorfy-co/valbridge",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vectorfy-co/valbridge.git",
+		"directory": "typescript/packages/zod-extractor"
+	},
+	"bugs": {
+		"url": "https://github.com/vectorfy-co/valbridge/issues"
+	},
+	"keywords": [
+		"valbridge",
+		"zod",
+		"extractor",
+		"json-schema",
+		"typescript",
+		"introspection",
+		"validation"
+	],
 	"bin": {
 		"valbridge-zod-extractor": "./dist/index.js"
 	},

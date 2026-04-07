@@ -3,6 +3,25 @@
 	"version": "0.3.0",
 	"type": "module",
 	"description": "Render valbridge IR into Zod schemas",
+	"license": "MIT",
+	"homepage": "https://github.com/vectorfy-co/valbridge",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vectorfy-co/valbridge.git",
+		"directory": "typescript/packages/adapters/zod"
+	},
+	"bugs": {
+		"url": "https://github.com/vectorfy-co/valbridge/issues"
+	},
+	"keywords": [
+		"valbridge",
+		"zod",
+		"json-schema",
+		"adapter",
+		"code-generation",
+		"typescript",
+		"validation"
+	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
