@@ -142,11 +142,11 @@ jobs:
   release-py:
     needs: release-please
     if: |
-      (matrix.package_key == 'core' && needs.release-please.outputs.py-core--release_created == 'true') ||
-      (matrix.package_key == 'client' && needs.release-please.outputs.py-client--release_created == 'true') ||
-      (matrix.package_key == 'pydantic' && needs.release-please.outputs.py-pydantic--release_created == 'true') ||
-      (matrix.package_key == 'pydantic-extractor' && needs.release-please.outputs.py-pydantic-extractor--release_created == 'true') ||
-      (matrix.package_key == 'pydantic-bridge' && needs.release-please.outputs.py-pydantic-bridge--release_created == 'true')
+      needs.release-please.outputs.py-core--release_created == 'true' ||
+      needs.release-please.outputs.py-client--release_created == 'true' ||
+      needs.release-please.outputs.py-pydantic--release_created == 'true' ||
+      needs.release-please.outputs.py-pydantic-extractor--release_created == 'true' ||
+      needs.release-please.outputs.py-pydantic-bridge--release_created == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -174,15 +174,53 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
+      - name: Resolve package release
+        id: release_target
+        env:
+          PY_CORE_RELEASED: ${{ needs.release-please.outputs.py-core--release_created }}
+          PY_CLIENT_RELEASED: ${{ needs.release-please.outputs.py-client--release_created }}
+          PY_PYDANTIC_RELEASED: ${{ needs.release-please.outputs.py-pydantic--release_created }}
+          PY_PYDANTIC_EXTRACTOR_RELEASED: ${{ needs.release-please.outputs.py-pydantic-extractor--release_created }}
+          PY_PYDANTIC_BRIDGE_RELEASED: ${{ needs.release-please.outputs.py-pydantic-bridge--release_created }}
+        run: |
+          should_publish=false
+
+          case "${{ matrix.package_key }}" in
+            core)
+              if [ "$PY_CORE_RELEASED" = "true" ]; then should_publish=true; fi
+              ;;
+            client)
+              if [ "$PY_CLIENT_RELEASED" = "true" ]; then should_publish=true; fi
+              ;;
+            pydantic)
+              if [ "$PY_PYDANTIC_RELEASED" = "true" ]; then should_publish=true; fi
+              ;;
+            pydantic-extractor)
+              if [ "$PY_PYDANTIC_EXTRACTOR_RELEASED" = "true" ]; then should_publish=true; fi
+              ;;
+            pydantic-bridge)
+              if [ "$PY_PYDANTIC_BRIDGE_RELEASED" = "true" ]; then should_publish=true; fi
+              ;;
+            *)
+              echo "Unsupported package key: ${{ matrix.package_key }}" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "should_publish=$should_publish" >>"$GITHUB_OUTPUT"
+
       - name: Install dependencies
+        if: steps.release_target.outputs.should_publish == 'true'
         run: uv sync
         working-directory: python
 
       - name: Build distribution
+        if: steps.release_target.outputs.should_publish == 'true'
         run: uv build --out-dir dist --clear
         working-directory: ${{ matrix.package_dir }}
 
       - name: Publish to PyPI
+        if: steps.release_target.outputs.should_publish == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ matrix.package_dir }}/dist
