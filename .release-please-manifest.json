@@ -8,5 +8,5 @@
   "python/packages/pydantic-extractor": "0.1.0",
   "python/packages/pydantic-bridge": "0.1.0",
   "python/packages/client": "0.1.0",
-  "python/packages/core": "0.1.0"
+  "python/packages/core": "0.1.1"
 }
