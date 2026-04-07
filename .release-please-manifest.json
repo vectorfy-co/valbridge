@@ -1,6 +1,6 @@
 {
   "typescript/packages/adapters/zod": "0.4.1",
-  "typescript/packages/zod-extractor": "0.4.1",
+  "typescript/packages/zod-extractor": "0.4.2",
   "typescript/packages/zod-bridge": "0.4.1",
   "typescript/packages/client": "0.4.1",
   "typescript/packages/core": "0.4.1",
@@ -8,5 +8,8 @@
   "python/packages/pydantic-extractor": "0.4.1",
   "python/packages/pydantic-bridge": "0.4.1",
   "python/packages/client": "0.4.1",
-  "python/packages/core": "0.4.1"
+  "python/packages/core": "0.4.1",
+  "cli": "1.0.0",
+  "typescript/packages/cli": "1.0.0",
+  "python/packages/cli": "0.1.0"
 }
