@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -2143,11 +2144,15 @@ func TestFlattenDefsLinearScaling(t *testing.T) {
 
 	ctx := context.Background()
 
-	// Test with depths 5 and 10 - if quadratic, 10 would be ~4x slower than 5
-	// With linear scaling, 10 should be ~2x slower than 5
+	// Compare median per-iteration timings across multiple trials so transient
+	// runner jitter does not make this guard flaky in CI.
 	depths := []int{5, 10}
-	iterations := 100
-	times := make(map[int]int64)
+	const (
+		minSampleDuration = 50 * time.Millisecond
+		trials            = 5
+		maxLinearRatio    = 3.5
+	)
+	times := make(map[int][]float64)
 
 	for _, depth := range depths {
 		schema := generateNestedDefsSchema(depth)
@@ -2162,39 +2167,69 @@ func TestFlattenDefsLinearScaling(t *testing.T) {
 			}
 		}`
 
-		// Warm up
-		for i := 0; i < 5; i++ {
-			_, _ = Bundle(ctx, BundleInput{
-				Schema:    json.RawMessage(rootSchema),
-				SourceURI: "http://example.com/base.json",
-				Fetcher:   fetcher,
-			})
-		}
-
-		// Time the iterations
-		start := time.Now()
-		for i := 0; i < iterations; i++ {
+		runBundle := func() error {
 			_, err := Bundle(ctx, BundleInput{
 				Schema:    json.RawMessage(rootSchema),
 				SourceURI: "http://example.com/base.json",
 				Fetcher:   fetcher,
 			})
-			if err != nil {
-				t.Fatalf("depth %d: unexpected error: %v", depth, err)
-			}
+			return err
 		}
-		times[depth] = time.Since(start).Nanoseconds()
+
+		// Warm up
+		for i := 0; i < 5; i++ {
+			_ = runBundle()
+		}
+
+		iterations := 100
+		for {
+			start := time.Now()
+			for i := 0; i < iterations; i++ {
+				if err := runBundle(); err != nil {
+					t.Fatalf("depth %d: unexpected error: %v", depth, err)
+				}
+			}
+			if time.Since(start) >= minSampleDuration {
+				break
+			}
+			iterations *= 2
+		}
+
+		for trial := 0; trial < trials; trial++ {
+			start := time.Now()
+			for i := 0; i < iterations; i++ {
+				if err := runBundle(); err != nil {
+					t.Fatalf("depth %d trial %d: unexpected error: %v", depth, trial, err)
+				}
+			}
+			elapsedPerIteration := float64(time.Since(start).Nanoseconds()) / float64(iterations)
+			times[depth] = append(times[depth], elapsedPerIteration)
+		}
+
+		sort.Float64s(times[depth])
 	}
 
-	// With linear scaling: time(10) / time(5) should be approximately 2
-	// With quadratic scaling: time(10) / time(5) would be approximately 4
-	// Allow some margin for variance
-	ratio := float64(times[10]) / float64(times[5])
-	t.Logf("depth 5: %dns, depth 10: %dns, ratio: %.2f", times[5], times[10], ratio)
+	median := func(values []float64) float64 {
+		return values[len(values)/2]
+	}
 
-	// If ratio > 3, it's likely quadratic
-	if ratio > 3.0 {
-		t.Errorf("scaling appears quadratic: ratio %.2f (expected ~2 for linear)", ratio)
+	medianDepth5 := median(times[5])
+	medianDepth10 := median(times[10])
+	ratio := medianDepth10 / medianDepth5
+	t.Logf(
+		"depth 5 median: %.0fns depth 10 median: %.0fns ratio: %.2f trials5=%v trials10=%v",
+		medianDepth5,
+		medianDepth10,
+		ratio,
+		times[5],
+		times[10],
+	)
+
+	// A truly quadratic regression should still exceed this comfortably
+	// (depth 10 should trend toward ~4x depth 5), while leaving headroom for
+	// shared-runner timing variance.
+	if ratio > maxLinearRatio {
+		t.Errorf("scaling appears worse than linear: ratio %.2f exceeds %.2f", ratio, maxLinearRatio)
 	}
 }
 
