@@ -4,12 +4,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/language"
 )
 
 func TestAdapterInvokerPrefersPublishedPackagesByDefault(t *testing.T) {
-	t.Setenv("VALBRIDGE_WORKSPACE_ROOT", "")
-	t.Setenv("VALBRIDGE_PREFER_WORKSPACE", "")
+	t.Setenv(config.EnvWorkspaceRoot, "")
+	t.Setenv(config.EnvPreferWorkspace, "")
 
 	spec, err := adapterInvoker{}.BuildAdapterCommand(t.Context(), language.AdapterCommandInput{
 		ProjectRoot: t.TempDir(),

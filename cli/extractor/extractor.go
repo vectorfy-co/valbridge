@@ -211,37 +211,15 @@ func runExtractorCommand(
 }
 
 func buildPydanticExtractorCandidates(projectRoot string, args []string) ([]commandCandidate, error) {
-	var candidates []commandCandidate
-	var resolutionErrors []string
-	addWorkspaceFirst := config.WorkspaceRoot() != "" || config.PreferWorkspace()
-
-	if addWorkspaceFirst {
-		candidate, err := buildWorkspacePydanticExtractorCandidate(projectRoot, args)
-		if err != nil {
-			resolutionErrors = append(resolutionErrors, err.Error())
-		} else {
-			candidates = append(candidates, candidate)
-		}
-	}
-
-	if candidate, err := buildPublishedPydanticExtractorCandidate(args); err == nil {
-		candidates = append(candidates, candidate)
-	} else {
-		resolutionErrors = append(resolutionErrors, err.Error())
-	}
-
-	if !addWorkspaceFirst {
-		candidate, err := buildWorkspacePydanticExtractorCandidate(projectRoot, args)
-		if err == nil {
-			candidates = append(candidates, candidate)
-		}
-	}
-
-	if len(candidates) == 0 {
-		return nil, fmt.Errorf("%s", strings.Join(resolutionErrors, "\n"))
-	}
-
-	return candidates, nil
+	return buildExtractorCandidates(
+		config.WorkspaceRoot() != "" || config.PreferWorkspace(),
+		func() (commandCandidate, error) {
+			return buildWorkspacePydanticExtractorCandidate(projectRoot, args)
+		},
+		func() (commandCandidate, error) {
+			return buildPublishedPydanticExtractorCandidate(args)
+		},
+	)
 }
 
 func buildWorkspacePydanticExtractorCandidate(projectRoot string, args []string) (commandCandidate, error) {
@@ -325,12 +303,27 @@ func buildZodExtractorCandidates(
 	exportName string,
 	runner string,
 ) ([]commandCandidate, error) {
+	return buildExtractorCandidates(
+		config.WorkspaceRoot() != "" || config.PreferWorkspace(),
+		func() (commandCandidate, error) {
+			return buildWorkspaceZodExtractorCandidate(projectRoot, modulePath, exportName, runner)
+		},
+		func() (commandCandidate, error) {
+			return buildPublishedZodExtractorCandidate(modulePath, exportName)
+		},
+	)
+}
+
+func buildExtractorCandidates(
+	addWorkspaceFirst bool,
+	buildWorkspace func() (commandCandidate, error),
+	buildPublished func() (commandCandidate, error),
+) ([]commandCandidate, error) {
 	var candidates []commandCandidate
 	var resolutionErrors []string
-	addWorkspaceFirst := config.WorkspaceRoot() != "" || config.PreferWorkspace()
 
 	if addWorkspaceFirst {
-		candidate, err := buildWorkspaceZodExtractorCandidate(projectRoot, modulePath, exportName, runner)
+		candidate, err := buildWorkspace()
 		if err != nil {
 			resolutionErrors = append(resolutionErrors, err.Error())
 		} else {
@@ -338,14 +331,14 @@ func buildZodExtractorCandidates(
 		}
 	}
 
-	if candidate, err := buildPublishedZodExtractorCandidate(modulePath, exportName); err == nil {
+	if candidate, err := buildPublished(); err == nil {
 		candidates = append(candidates, candidate)
 	} else {
 		resolutionErrors = append(resolutionErrors, err.Error())
 	}
 
 	if !addWorkspaceFirst {
-		candidate, err := buildWorkspaceZodExtractorCandidate(projectRoot, modulePath, exportName, runner)
+		candidate, err := buildWorkspace()
 		if err == nil {
 			candidates = append(candidates, candidate)
 		}

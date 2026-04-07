@@ -3,14 +3,18 @@ from __future__ import annotations
 import importlib.metadata
 import os
 import platform
+import shutil
 import stat
 import sys
+import tempfile
+from urllib.parse import urlparse
 import urllib.request
 from pathlib import Path
 
 OWNER = "vectorfy-co"
 REPO = "valbridge"
 ENV_BIN = "VALBRIDGE_CLI_BIN"
+DOWNLOAD_TIMEOUT_SECONDS = 30
 
 
 def _package_version() -> str:
@@ -58,7 +62,22 @@ def resolve_binary() -> str:
     destination = _cache_path(version, filename)
     if not destination.exists():
         destination.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(url, destination)
+        parsed = urlparse(url)
+        if parsed.scheme != "https":
+            raise RuntimeError(f"Refusing to download valbridge CLI over non-HTTPS scheme: {parsed.scheme or '<missing>'}")
+
+        with tempfile.NamedTemporaryFile(delete=False, dir=destination.parent) as temp_file:
+            temp_path = Path(temp_file.name)
+
+        try:
+            with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS) as response:
+                with temp_path.open("wb") as file_obj:
+                    shutil.copyfileobj(response, file_obj)
+            temp_path.replace(destination)
+        except Exception:
+            temp_path.unlink(missing_ok=True)
+            raise
+
         if os.name != "nt":
             destination.chmod(destination.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 

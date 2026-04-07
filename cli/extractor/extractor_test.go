@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/parser"
 )
 
@@ -147,7 +148,7 @@ func TestResolveWorkspaceRootUsesExplicitEnv(t *testing.T) {
 		t.Fatalf("failed to create fake workspace probe: %v", err)
 	}
 
-	t.Setenv("VALBRIDGE_WORKSPACE_ROOT", workspaceRoot)
+	t.Setenv(config.EnvWorkspaceRoot, workspaceRoot)
 
 	found, err := resolveWorkspaceRoot(
 		t.TempDir(),
@@ -162,6 +163,9 @@ func TestResolveWorkspaceRootUsesExplicitEnv(t *testing.T) {
 }
 
 func TestBuildZodExtractorCandidatesPrefersPublishedByDefault(t *testing.T) {
+	t.Setenv(config.EnvWorkspaceRoot, "")
+	t.Setenv(config.EnvPreferWorkspace, "")
+
 	candidates, err := buildZodExtractorCandidates(repoRoot(t), "/tmp/schema.ts", "Schema", "pnpm")
 	if err != nil {
 		t.Fatalf("buildZodExtractorCandidates: %v", err)
@@ -175,6 +179,9 @@ func TestBuildZodExtractorCandidatesPrefersPublishedByDefault(t *testing.T) {
 }
 
 func TestBuildPydanticExtractorCandidatesPrefersPublishedByDefault(t *testing.T) {
+	t.Setenv(config.EnvWorkspaceRoot, "")
+	t.Setenv(config.EnvPreferWorkspace, "")
+
 	candidates, err := buildPydanticExtractorCandidates(repoRoot(t), []string{"app.models:User"})
 	if err != nil {
 		t.Fatalf("buildPydanticExtractorCandidates: %v", err)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/language"
+	"github.com/vectorfy-co/valbridge/ui"
 )
 
 const adapterBinPrefix = "valbridge-"
@@ -97,6 +98,13 @@ func (adapterInvoker) BuildAdapterCommand(ctx context.Context, input language.Ad
 	if config.WorkspaceRoot() != "" || config.PreferWorkspace() {
 		if cmdSpec, err := buildWorkspaceAdapterCommand(projectRoot, binName); err == nil {
 			return cmdSpec, nil
+		} else {
+			ui.Verbosef(
+				"workspace typescript adapter resolution failed: project_root=%s bin=%s error=%v",
+				projectRoot,
+				binName,
+				err,
+			)
 		}
 	}
 

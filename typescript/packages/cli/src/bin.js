@@ -10,6 +10,8 @@ import https from "node:https";
 const OWNER = "vectorfy-co";
 const REPO = "valbridge";
 const ENV_BIN = "VALBRIDGE_CLI_BIN";
+const MAX_REDIRECTS = 5;
+const REQUEST_TIMEOUT_MS = 30_000;
 
 function packageVersion() {
   const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), "..", "package.json");
@@ -51,14 +53,19 @@ function cachePath(version, filename) {
   return join(homedir(), ".cache", "valbridge", "cli", version, filename);
 }
 
-async function download(url, destination) {
+async function download(url, destination, redirects = 0) {
   mkdirSync(dirname(destination), { recursive: true });
 
   await new Promise((resolve, reject) => {
     const request = https.get(url, (response) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        if (redirects >= MAX_REDIRECTS) {
+          response.resume();
+          reject(new Error(`Failed to download ${url}: too many redirects`));
+          return;
+        }
         response.resume();
-        download(response.headers.location, destination).then(resolve).catch(reject);
+        download(response.headers.location, destination, redirects + 1).then(resolve).catch(reject);
         return;
       }
 
@@ -72,6 +79,9 @@ async function download(url, destination) {
       response.pipe(file);
       file.on("finish", () => file.close(resolve));
       file.on("error", reject);
+    });
+    request.setTimeout(REQUEST_TIMEOUT_MS, () => {
+      request.destroy(new Error(`Failed to download ${url}: request timed out after ${REQUEST_TIMEOUT_MS}ms`));
     });
     request.on("error", reject);
   });

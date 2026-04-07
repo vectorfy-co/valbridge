@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import subprocess
 import sys
 
@@ -8,7 +7,11 @@ from ._runtime import resolve_binary
 
 
 def main() -> int:
-    binary = resolve_binary()
+    try:
+        binary = resolve_binary()
+    except RuntimeError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 1
     completed = subprocess.run([binary, *sys.argv[1:]], check=False)
     return completed.returncode
 

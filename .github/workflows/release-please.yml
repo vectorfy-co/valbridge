@@ -107,6 +107,9 @@ jobs:
           - goos: windows
             goarch: amd64
             asset_name: valbridge-windows-x64.exe
+          - goos: windows
+            goarch: arm64
+            asset_name: valbridge-windows-arm64.exe
     permissions:
       contents: write
     steps:
@@ -435,6 +438,9 @@ jobs:
           - goos: windows
             goarch: amd64
             asset_name: valbridge-windows-x64.exe
+          - goos: windows
+            goarch: arm64
+            asset_name: valbridge-windows-arm64.exe
     permissions:
       contents: write
     steps:

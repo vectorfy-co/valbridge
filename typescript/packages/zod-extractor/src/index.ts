@@ -32,6 +32,8 @@ export interface OutputWriter {
 
 export const ZOD_EXTRACTOR_SCOPE = "zod-4.3.x";
 
+let scopeCounter = 0;
+
 class ZodExtractorError extends Error {
 	readonly diagnostics: Diagnostic[];
 
@@ -63,9 +65,13 @@ export async function extractFromModule(
 	target: ZodExtractionTarget,
 ): Promise<ExtractedSchemaResult> {
 	const moduleUrl = toFileModuleUrl(target.modulePath);
-	const scope = register({ namespace: `valbridge-zod-extractor-${Date.now()}` });
-	const loaded = await scope.import(moduleUrl, import.meta.url);
-	await scope.unregister();
+	const scope = register({ namespace: `valbridge-zod-extractor-${nextScopeID()}` });
+	let loaded: Record<string, unknown>;
+	try {
+		loaded = (await scope.import(moduleUrl, import.meta.url)) as Record<string, unknown>;
+	} finally {
+		await scope.unregister();
+	}
 	const schema = loaded[target.exportName];
 
 	if (!schema || typeof schema !== "object" || !("_zod" in schema)) {
@@ -75,6 +81,16 @@ export async function extractFromModule(
 	}
 
 	return extractSchema(schema as z.ZodType);
+}
+
+function nextScopeID(): string {
+	const maybeRandomUUID = globalThis.crypto?.randomUUID;
+	if (typeof maybeRandomUUID === "function") {
+		return maybeRandomUUID.call(globalThis.crypto);
+	}
+
+	scopeCounter += 1;
+	return `fallback-${scopeCounter}`;
 }
 
 export async function main(
