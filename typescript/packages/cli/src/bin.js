@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { chmodSync, createWriteStream, existsSync, mkdirSync, readFileSync } from "node:fs";
+import { chmodSync, createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -55,7 +55,22 @@ function cachePath(version, filename) {
 
 async function download(url, destination, redirects = 0) {
   mkdirSync(dirname(destination), { recursive: true });
+  const tempDestination = `${destination}.tmp-${process.pid}-${Date.now()}`;
 
+  try {
+    await downloadToFile(url, tempDestination, redirects);
+    renameSync(tempDestination, destination);
+  } catch (error) {
+    rmSync(tempDestination, { force: true });
+    throw error;
+  }
+
+  if (process.platform !== "win32") {
+    chmodSync(destination, 0o755);
+  }
+}
+
+async function downloadToFile(url, destination, redirects = 0) {
   await new Promise((resolve, reject) => {
     const request = https.get(url, (response) => {
       if (response.statusCode && response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
@@ -65,7 +80,7 @@ async function download(url, destination, redirects = 0) {
           return;
         }
         response.resume();
-        download(response.headers.location, destination, redirects + 1).then(resolve).catch(reject);
+        downloadToFile(response.headers.location, destination, redirects + 1).then(resolve).catch(reject);
         return;
       }
 
@@ -85,10 +100,6 @@ async function download(url, destination, redirects = 0) {
     });
     request.on("error", reject);
   });
-
-  if (process.platform !== "win32") {
-    chmodSync(destination, 0o755);
-  }
 }
 
 async function resolveBinary() {
