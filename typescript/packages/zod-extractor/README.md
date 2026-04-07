@@ -1,6 +1,15 @@
-# @vectorfyco/valbridge-zod-extractor
+<div align="center">
 
-Workspace-local extraction utilities for turning Zod schemas back into JSON Schema enriched for `valbridge`.
+# ![valbridge-zod-extractor](https://img.shields.io/static/v1?label=&message=%40vectorfyco%2Fvalbridge-zod-extractor&color=3E67B1&style=for-the-badge&logo=zod&logoColor=white)
+
+Extract JSON Schema from existing Zod schemas, enriched with `x-valbridge` annotations for high-fidelity cross-language generation.
+
+<a href="https://www.npmjs.com/package/@vectorfyco/valbridge-zod-extractor"><img src="https://img.shields.io/npm/v/@vectorfyco/valbridge-zod-extractor?style=flat&logo=npm&logoColor=white" alt="npm" /></a>
+<a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>
+
+</div>
+
+---
 
 ## Installation
 
@@ -18,10 +27,9 @@ valbridge-zod-extractor \
   --export-name UserSchema
 ```
 
-The command prints JSON with:
-
-- `schema`: the extracted JSON Schema document
-- `diagnostics`: compatibility diagnostics for unsupported Zod features or versions
+Output is JSON with:
+- `schema` -- the extracted JSON Schema document
+- `diagnostics` -- compatibility diagnostics for unsupported Zod features or versions
 
 ## Programmatic usage
 
@@ -38,8 +46,21 @@ const result = extractSchema(UserSchema);
 console.log(result.schema);
 ```
 
-## Notes
+## Key behaviors
 
-- built for the current `valbridge` Zod integration path
-- validates the supported Zod version before extraction
-- preserves `x-valbridge` annotations needed by downstream tooling
+- Validates the supported Zod version before extraction
+- Preserves `x-valbridge` annotations needed by downstream adapters (Pydantic, future targets)
+- Emits diagnostics for Zod features that cannot be represented in JSON Schema
+
+## Related packages
+
+| Package | Purpose |
+| --- | --- |
+| [`@vectorfyco/valbridge-zod`](https://www.npmjs.com/package/@vectorfyco/valbridge-zod) | Zod adapter (JSON Schema to Zod) |
+| [`@vectorfyco/valbridge-core`](https://www.npmjs.com/package/@vectorfyco/valbridge-core) | Core IR and JSON Schema parser |
+| [`valbridge-pydantic-extractor`](https://pypi.org/project/valbridge-pydantic-extractor/) | Python equivalent for Pydantic models |
+
+## Learn more
+
+- [GitHub repository](https://github.com/vectorfy-co/valbridge)
+- [Full documentation](https://github.com/vectorfy-co/valbridge#readme)

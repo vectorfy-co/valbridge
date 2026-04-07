@@ -1,10 +1,15 @@
-# @vectorfyco/valbridge-zod
+<div align="center">
 
-Zod adapter for valbridge - converts JSON Schema to Zod validators.
+# ![valbridge-zod](https://img.shields.io/static/v1?label=&message=%40vectorfyco%2Fvalbridge-zod&color=3E67B1&style=for-the-badge&logo=zod&logoColor=white)
 
-## JSON Schema Compliance
+Zod 4.x adapter for valbridge -- converts JSON Schema into idiomatic Zod validators with full TypeScript type inference.
 
-See [compliance/results/REPORT.md](./compliance/results/REPORT.md) for detailed test results.
+<a href="https://www.npmjs.com/package/@vectorfyco/valbridge-zod"><img src="https://img.shields.io/npm/v/@vectorfyco/valbridge-zod?style=flat&logo=npm&logoColor=white" alt="npm" /></a>
+<a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>
+
+</div>
+
+---
 
 ## Installation
 
@@ -12,137 +17,94 @@ See [compliance/results/REPORT.md](./compliance/results/REPORT.md) for detailed 
 pnpm add @vectorfyco/valbridge-zod zod
 ```
 
-Supported Zod range: `^4.0.0`
-
-Verified in CI against `zod 4.3.6`.
+Supported Zod range: `^4.0.0`. Verified in CI against `zod 4.3.6`.
 
 ## Usage
 
-This adapter is used by valbridge CLI to convert JSON Schema to Zod validators.
+This adapter is invoked by the valbridge CLI. Define schemas in a config file:
 
 ```jsonc
-// user.ts.jsonc
+// user.valbridge.jsonc
 {
   "$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
   "schemas": [
     {
       "id": "User",
       "adapter": "@vectorfyco/valbridge-zod",
-      "source": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" },
-          "age": { "type": "integer" }
-        },
-        "required": ["name"]
-      }
+      "sourceType": "file",
+      "source": "./schemas/user.json"
     }
   ]
 }
 ```
 
-Then run:
+Then generate:
 
 ```bash
 valbridge generate
 ```
 
-Then use the generated schemas with the [valbridge client](/docs/typescript/client).
+Use the generated schemas with the [valbridge runtime client](https://www.npmjs.com/package/@vectorfyco/valbridge).
 
-## Local Verification
+## JSON Schema compliance
+
+See [compliance/results/REPORT.md](./compliance/results/REPORT.md) for detailed test results from the JSON Schema Test Suite.
+
+## Verification
 
 Run from the adapter directory (`typescript/packages/adapters/zod/`):
 
 ```bash
-# runtime compliance (requires Go CLI built at cli/)
+# JSON Schema Test Suite compliance (requires Go CLI)
 pnpm run compliance
 
-# unit tests
+# Unit tests
 pnpm run test
 
-# typecheck
+# Type checking
 pnpm run typecheck
 
-# type-fidelity harness (checks for any-leakage regressions)
+# Type-fidelity harness (checks for any-leakage regressions)
 pnpm run type-fidelity
-
-# compatibility checks run in CI against zod 4.3.6
 ```
 
-## Fallback Typing Guardrails
+## Fallback typing guardrails
 
-The Zod adapter uses `z.unknown()` as a safe fallback for constructs where the validated domain is unbounded. It uses `z.any()` only where Zod's type system cannot represent the constraint statically. The goal: minimize `any` in inferred TypeScript types.
+The adapter uses `z.unknown()` as a safe fallback for unbounded domains and `z.any()` only where Zod's type system cannot represent the constraint statically. The goal: minimize `any` in inferred TypeScript types.
 
 ### Allowed `z.any()` fallbacks
 
-These are known, accepted degradations where `z.any()` is required.
+| Construct | Reason |
+|-----------|--------|
+| IR `any` node | Empty schema `{}` or `true` -- no constraints to express |
+| Empty/all-any intersection | Zero effective schemas |
+| Tuple base | `z.tuple()` does not support open tuples with rest items |
+| Complex const array | Deep equality validated via runtime helper |
+| Complex enum values | Values span multiple types |
+| Prototype-property objects | `z.object()` cannot handle `__proto__`, `constructor`, etc. |
 
-| Construct | Renderer function | Reason |
-|-----------|-------------------|--------|
-| IR `any` node | `render` (case "any") | empty schema `{}` or `true` — no constraints to express |
-| empty intersection | `renderIntersection` | zero schemas = no constraints |
-| all-any intersection | `renderIntersection` | all sub-schemas are `any` |
-| tuple base | `renderTuple` | `z.array(z.any()).superRefine(...)` — Zod's `z.tuple()` doesn't support open tuples with rest items; positional validation is done in superRefine |
-| complex const array | `renderLiteral` | `z.array(z.any()).refine(...)` — base ensures array shape, deep equality validated via `DEEP_SORTED_STRINGIFY_RUNTIME` |
-| complex enum values | `renderEnum` | `z.any().refine(...)` — enum values can span multiple types (objects, arrays, primitives) |
-| prototype-property objects | `renderObjectWithProtoProps` | `z.any().superRefine(...)` — `z.object()` cannot safely handle keys like `__proto__`, `constructor`, `toString` |
+### Constructs that must NOT use `any`
 
-### Allowed `z.unknown()` usage (NOT type-degrading)
+These are validated by the type-fidelity harness and will fail CI on regression:
 
-`z.unknown()` infers TypeScript `unknown`, which is safe — it forces callers to narrow before use. These are structural, not degradations.
-
-| Construct | Renderer function | Reason |
-|-----------|-------------------|--------|
-| `not` | `renderNot` | negation ("everything except X") is semantically unbounded |
-| `oneOf` | `renderOneOf` | runtime validates exactly-one match via superRefine |
-| `conditional` (all branches) | `renderConditional` | if/then/else dispatches at runtime; single-branch conditionals have unconstrained passthrough |
-| `typeGuarded` | `renderTypeGuarded` | dispatches to per-type validators; unmatched types pass through |
-| bare `if` (no then/else) | `renderConditional` | no validation effect per JSON Schema spec |
-| empty guards | `renderTypeGuarded` | no type dispatch = anything passes |
-
-### Narrowed constructs that must NOT use `any`
-
-These constructs previously used `z.any()` and were narrowed. Regressions are caught by the type-fidelity harness.
-
-| Construct | Expected Zod output | How it narrows |
-|-----------|---------------------|----------------|
-| `oneOf` (2+ schemas) | `z.unknown().superRefine(...)` | `z.unknown()` → infers `unknown`, not `any` |
-| `not` | `z.unknown().refine(...)` | same — `z.unknown()` instead of `z.any()` |
-| `conditional` | `z.unknown().superRefine(...)` | same |
-| `typeGuarded` | `z.unknown().superRefine(...)` | same |
-| `const` (object) | `z.object({}).passthrough().refine(...)` | passthrough object base → not `any` |
-
-### Disallowed patterns
-
-| Pattern | Required behavior |
-|---------|-------------------|
-| unknown IR node kind | renderer `render()` must throw `Error` via exhaustive switch — never silently produce `z.any()` |
-| new renderer branch producing `z.any()` without documented reason | must be added to "allowed" table above or changed to `z.unknown()` |
-| `any`-regression on a probe with `expectAny: false` | type-fidelity harness exits non-zero — must be fixed before merge |
-
-### Required test coverage for new renderer branches
-
-- semantic wrappers (`oneOf`, `not`, `conditional`, `typeGuarded`): must have tests verifying the generated code uses `z.unknown()`, not `z.any()`
-- tuple generation: must test that size constraints (`.min()`, `.max()`) are applied before `.superRefine()` — calling array methods on `ZodEffects` is a compile error
-- prototype-property objects: must test that non-object values are rejected (the superRefine guard must add an issue, not silently pass)
-- complex const/enum: must test nested object/array deep equality via `DEEP_SORTED_STRINGIFY_RUNTIME`
+- `oneOf`, `not`, `conditional`, `typeGuarded` -- must use `z.unknown()`
+- `const` (object) -- must use `z.object({}).passthrough().refine(...)`
 
 ## Troubleshooting
 
-### type-fidelity harness shows `IMPROVED`
+- **Type-fidelity shows `IMPROVED`** -- a probe got narrower than expected. Update `expectAny` to `false` to lock in the improvement.
+- **Type-fidelity shows `FAIL`** -- a renderer change regressed the type output. Fix the regression.
+- **`ZodEffects` method errors** -- array size constraints must come before `.superRefine()`/`.refine()` calls.
 
-A probe expected `any` but got a narrower type. This means the code improved beyond current expectations. Update `expectAny` from `true` to `false` in `type-probe/type-fidelity.ts` to lock in the improvement. Don't ignore it — unlocked improvements can silently regress.
+## Related packages
 
-### type-fidelity harness shows `FAIL`
+| Package | Purpose |
+| --- | --- |
+| [`@vectorfyco/valbridge`](https://www.npmjs.com/package/@vectorfyco/valbridge) | Runtime client for generated validators |
+| [`@vectorfyco/valbridge-core`](https://www.npmjs.com/package/@vectorfyco/valbridge-core) | Core IR and JSON Schema parser |
+| [`@vectorfyco/valbridge-zod-bridge`](https://www.npmjs.com/package/@vectorfyco/valbridge-zod-bridge) | Bridge helpers for Zod generation |
 
-A probe expected no-any but inferred `any`. Either:
-1. a renderer change regressed the type output — fix the regression
-2. the probe's schema changed — verify the new schema still warrants `expectAny: false`
+## Learn more
 
-### `ZodEffects` method errors
-
-If generated code fails to compile with errors like "Property 'min' does not exist on type 'ZodEffects'", array size constraints are being applied after a `.superRefine()` or `.refine()` call. Size constraints must come before effect wrappers. See `renderArraySizeConstraints` vs `renderArrayRefinementConstraints`.
-
-### compliance failures after renderer changes
-
-Run compliance from the adapter directory: `pnpm run compliance`. Compare against the baseline in `tasks/type-fidelity-baseline/zod/compliance-summary.md`. Any regression in pass counts indicates a runtime behavior change — the renderer must preserve validation semantics.
+- [GitHub repository](https://github.com/vectorfy-co/valbridge)
+- [Full documentation](https://github.com/vectorfy-co/valbridge#readme)

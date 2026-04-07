@@ -1,8 +1,17 @@
-# @vectorfyco/valbridge
+<div align="center">
 
-Runtime client for generated `valbridge` TypeScript validators with full type inference.
+# ![valbridge](https://img.shields.io/static/v1?label=&message=%40vectorfyco%2Fvalbridge&color=3178C6&style=for-the-badge&logo=typescript&logoColor=white)
 
-## installation
+Runtime client for valbridge-generated TypeScript validators with full type inference and compile-time safety.
+
+<a href="https://www.npmjs.com/package/@vectorfyco/valbridge"><img src="https://img.shields.io/npm/v/@vectorfyco/valbridge?style=flat&logo=npm&logoColor=white" alt="npm" /></a>
+<a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>
+
+</div>
+
+---
+
+## Installation
 
 ```bash
 npm install @vectorfyco/valbridge
@@ -10,9 +19,7 @@ npm install @vectorfyco/valbridge
 pnpm add @vectorfyco/valbridge
 ```
 
-## usage
-
-### basic client setup
+## Quick start
 
 ```typescript
 import { createValbridgeClient } from "@vectorfyco/valbridge";
@@ -20,119 +27,73 @@ import { schemas } from "./.valbridge/valbridge.gen.js";
 
 const valbridge = createValbridgeClient({ schemas });
 
-// lookup a schema by full namespace:id key
+// Lookup a schema by namespace:id key (with full autocomplete)
 const userSchema = valbridge("user:Profile");
-const tsConfigSchema = valbridge("another:TSConfig");
-
-// use the schema (with zod in the current product)
 const result = userSchema.parse({ id: "123", name: "john" });
 ```
 
-### default namespace
+## Default namespace
 
-set a default namespace to omit the namespace prefix for that namespace:
+Set a default namespace to omit the prefix for that namespace:
 
 ```typescript
-const valbridge = createValbridgeClient({ 
-  schemas, 
-  defaultNamespace: "user" 
+const valbridge = createValbridgeClient({
+  schemas,
+  defaultNamespace: "user"
 });
 
-// shorthand for "user:Profile"
+// Shorthand for "user:Profile"
 const profile = valbridge("Profile");
 
-// still need full key for other namespaces
+// Full key still works for other namespaces
 const tsConfig = valbridge("another:TSConfig");
 ```
 
-### type helpers
+## Type extraction
 
-use `ValbridgeType` to extract typescript types from your schemas:
+Use `ValbridgeType` to extract TypeScript types from registered schemas at zero runtime cost:
 
 ```typescript
 import type { ValbridgeType } from "@vectorfyco/valbridge";
 
-// extract type from any schema
 type UserProfile = ValbridgeType<"user:Profile">;
-type TSConfig = ValbridgeType<"another:TSConfig">;
 
-// use in function signatures
 function validateUser(data: unknown): UserProfile {
-  const schema = valbridge("user:Profile");
-  return schema.parse(data);
+  return valbridge("user:Profile").parse(data);
 }
 ```
 
-## schema + type output
+## Generated output structure
 
-Today, the maintained TypeScript path is Zod-based. Generated artifacts expose both runtime schemas and extracted types:
+The maintained TypeScript path uses Zod. Generated artifacts expose both runtime schemas and extracted types:
 
 ```typescript
-// generated code
+// Generated code
 const user_User = z.object({ id: z.string(), name: z.string() });
 type user_UserType = z.infer<typeof user_User>;
 
-// in schemas object (runtime lookup available)
-export const schemas = {
-  "user:User": user_User,
-} as const;
-
-// in SchemaTypes (type extraction available)
-export type SchemaTypes = {
-  "user:User": user_UserType;
-};
+export const schemas = { "user:User": user_User } as const;
+export type SchemaTypes = { "user:User": user_UserType };
 ```
 
-Both `valbridge("user:User")` and `ValbridgeType<"user:User">` work.
+Both `valbridge("user:User")` and `ValbridgeType<"user:User">` work with full type inference.
 
-## key behaviors
+## Key behaviors
 
-- **runtime lookup**: only entries with a runtime schema (`.Code` in generated output) appear in the `schemas` object
-- **type extraction**: all entries appear in `SchemaTypes`, regardless of whether they have runtime validators
-- **compile-time safety**: typescript prevents using type-only keys with `valbridge()` and schema-only/type-only keys where not applicable
+- **Runtime lookup** -- only entries with a runtime schema appear in the `schemas` object
+- **Type extraction** -- all entries appear in `SchemaTypes`, regardless of runtime validators
+- **Compile-time safety** -- TypeScript prevents using invalid keys; full autocomplete for all registered schemas
+- **Error messages** -- `valbridge("nonexistent:Key")` throws `Error: Unknown schema: nonexistent:Key. Run valbridge generate.`
 
-## examples
+## Related packages
 
-### using with zod
-
-```typescript
-import { createValbridgeClient } from "@vectorfyco/valbridge";
-import type { ValbridgeType } from "@vectorfyco/valbridge";
-import { schemas } from "./.valbridge/valbridge.gen.js";
-
-const valbridge = createValbridgeClient({ schemas, defaultNamespace: "user" });
-
-// validate data
-const userSchema = valbridge("Profile");
-const validatedUser = userSchema.parse(unknownData);
-
-// extract types
-type User = ValbridgeType<"user:Profile">;
-
-function createUser(data: User): void {
-  // ...
-}
-```
-
-## error handling
-
-if you try to look up a schema that doesn't exist:
-
-```typescript
-const schema = valbridge("nonexistent:Key");
-// Error: Unknown schema: nonexistent:Key. Run `valbridge generate`.
-```
-
-typescript will catch this at compile time with full autocomplete support.
-
-## TypeScript features
-
-- full autocomplete for all registered schema keys
-- compile-time errors for invalid keys
-- type inference for schema validators
-- works cleanly with the current Zod renderer path
+| Package | Purpose |
+| --- | --- |
+| [`@vectorfyco/valbridge-core`](https://www.npmjs.com/package/@vectorfyco/valbridge-core) | Core IR and JSON Schema parser |
+| [`@vectorfyco/valbridge-zod`](https://www.npmjs.com/package/@vectorfyco/valbridge-zod) | Zod adapter for code generation |
+| [`@vectorfyco/valbridge-cli`](https://www.npmjs.com/package/@vectorfyco/valbridge-cli) | CLI to generate validators |
 
 ## Learn more
 
-- [valbridge documentation](https://github.com/vectorfy-co/valbridge/docs)
-- [github repository](https://github.com/vectorfy-co/valbridge)
+- [GitHub repository](https://github.com/vectorfy-co/valbridge)
+- [Full documentation](https://github.com/vectorfy-co/valbridge#readme)
