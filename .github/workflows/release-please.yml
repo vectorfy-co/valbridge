@@ -5,6 +5,18 @@ on:
     workflows: ["CI"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      manual_python_package:
+        description: Python package to publish via trusted publishing
+        required: false
+        type: choice
+        options:
+          - core
+          - client
+          - pydantic
+          - pydantic-extractor
+          - pydantic-bridge
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -194,3 +206,56 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: python/packages/pydantic-bridge/dist
+
+  manual-release-py:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.manual_python_package != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Resolve package directory
+        id: pkg
+        run: |
+          case "${{ github.event.inputs.manual_python_package }}" in
+            core)
+              echo "package_dir=python/packages/core" >>"$GITHUB_OUTPUT"
+              ;;
+            client)
+              echo "package_dir=python/packages/client" >>"$GITHUB_OUTPUT"
+              ;;
+            pydantic)
+              echo "package_dir=python/packages/adapters/pydantic" >>"$GITHUB_OUTPUT"
+              ;;
+            pydantic-extractor)
+              echo "package_dir=python/packages/pydantic-extractor" >>"$GITHUB_OUTPUT"
+              ;;
+            pydantic-bridge)
+              echo "package_dir=python/packages/pydantic-bridge" >>"$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unsupported package: ${{ github.event.inputs.manual_python_package }}" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Install dependencies
+        run: uv sync
+        working-directory: python
+
+      - name: Build distribution
+        run: uv build --out-dir dist --clear
+        working-directory: ${{ steps.pkg.outputs.package_dir }}
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ steps.pkg.outputs.package_dir }}/dist
