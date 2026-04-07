@@ -1,0 +1,56 @@
+[project]
+name = "valbridge-core"
+version = "0.1.0"
+description = "Core IR types, diagnostics, and enriched schema parsing for valbridge"
+requires-python = ">=3.10"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "vectorfyco" }]
+maintainers = [{ name = "vectorfyco" }]
+keywords = [
+    "json-schema",
+    "validation",
+    "pydantic",
+    "code-generation",
+    "typescript",
+    "zod",
+    "schema",
+    "type-safety",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://github.com/vectorfy-co/valbridge"
+Documentation = "https://github.com/vectorfy-co/valbridge"
+Repository = "https://github.com/vectorfy-co/valbridge"
+Issues = "https://github.com/vectorfy-co/valbridge/issues"
+Changelog = "https://github.com/vectorfy-co/valbridge/blob/main/CHANGELOG.md"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/valbridge_core"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pytest>=8.0",
+]

@@ -1,0 +1,23 @@
+{
+	"name": "@vectorfyco/valbridge-core",
+	"version": "0.2.0",
+	"type": "module",
+	"description": "Core IR, diagnostics, and parser utilities for valbridge",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit",
+		"test": "pnpm exec vitest run"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0"
+	}
+}

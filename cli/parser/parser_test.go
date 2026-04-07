@@ -1,0 +1,896 @@
+package parser
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/vectorfy-co/valbridge/language"
+	langs "github.com/vectorfy-co/valbridge/language/langs"
+)
+
+func TestParseConfigFile(t *testing.T) {
+	// Create a temp directory with a test config file
+	tmpDir := t.TempDir()
+
+	// Create a valid valbridge config file
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "User",
+				"sourceType": "url",
+				"source": "https://example.com/user.json",
+				"adapter": "zod"
+			},
+			{
+				"id": "Post",
+				"sourceType": "file",
+				"source": "./post.json",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "user.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	// Parse the config file
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	// Assertions
+	if config == nil {
+		t.Fatal("expected config, got nil")
+	}
+	if config.Namespace != "user" {
+		t.Errorf("expected namespace 'user', got %q", config.Namespace)
+	}
+	if config.Language.Name != "typescript" {
+		t.Errorf("expected language 'typescript', got %q", config.Language.Name)
+	}
+	if len(config.Schemas) != 2 {
+		t.Errorf("expected 2 schemas, got %d", len(config.Schemas))
+	}
+
+	// Check first schema
+	if config.Schemas[0].ID != "User" {
+		t.Errorf("expected first schema ID 'User', got %q", config.Schemas[0].ID)
+	}
+	if config.Schemas[0].SourceType != SourceURL {
+		t.Errorf("expected sourceType 'url', got %q", config.Schemas[0].SourceType)
+	}
+}
+
+func TestParseConfigFileWithValbridgeSuffixNamespace(t *testing.T) {
+	// Create a temp directory with a test config file
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "User",
+				"sourceType": "url",
+				"source": "https://example.com/user.json",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "user.valbridge.json")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	if config == nil {
+		t.Fatal("expected config, got nil")
+	}
+	if config.Namespace != "user" {
+		t.Errorf("expected namespace 'user', got %q", config.Namespace)
+	}
+}
+
+func TestParseConfigFileRejectsLegacyFilenamePattern(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "User",
+				"sourceType": "url",
+				"source": "https://example.com/user.json",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "user."+"x"+"schema"+".jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err == nil {
+		t.Fatal("expected legacy filename pattern to be rejected")
+	}
+	if config != nil {
+		t.Fatal("expected no config on legacy filename")
+	}
+	if !strings.Contains(err.Error(), "legacy config filename patterns are no longer supported") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestParseConfigFileWithNamespaceOverride(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"namespace": "custom",
+		"schemas": [
+			{
+				"id": "Test",
+				"sourceType": "url",
+				"source": "https://example.com/test.json",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "user.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	if config.Namespace != "custom" {
+		t.Errorf("expected namespace 'custom' (override), got %q", config.Namespace)
+	}
+}
+
+func TestParseConfigFileNotValbridge(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// A regular JSON Schema file, not a valbridge config.
+	configContent := `{
+		"$schema": "https://json-schema.org/draft-07/schema#",
+		"type": "object"
+	}`
+
+	configPath := filepath.Join(tmpDir, "regular.json")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	// Should return nil for non-valbridge config
+	if config != nil {
+		t.Error("expected nil for non-valbridge config file")
+	}
+}
+
+func TestParseConfigFileWithJSONC(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// JSONC with comments
+	configContent := `{
+		// This is a comment
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "Test",
+				"sourceType": "url",
+				"source": "https://example.com/test.json",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "test.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	if config == nil {
+		t.Fatal("expected config, got nil")
+	}
+	if len(config.Schemas) != 1 {
+		t.Errorf("expected 1 schema, got %d", len(config.Schemas))
+	}
+}
+
+func TestParse(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create two config files
+	config1 := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+	config2 := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "Post", "sourceType": "url", "source": "https://example.com/post.json", "adapter": "zod"}
+		]
+	}`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "user.jsonc"), []byte(config1), 0644); err != nil {
+		t.Fatalf("failed to write config1: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "post.jsonc"), []byte(config2), 0644); err != nil {
+		t.Fatalf("failed to write config2: %v", err)
+	}
+
+	ctx := context.Background()
+	result, err := Parse(ctx, tmpDir, "")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+
+	if result.Language.Name != "typescript" {
+		t.Errorf("expected language 'typescript', got %q", result.Language.Name)
+	}
+	if len(result.Configs) != 2 {
+		t.Errorf("expected 2 configs, got %d", len(result.Configs))
+	}
+	if len(result.Declarations) != 2 {
+		t.Errorf("expected 2 declarations, got %d", len(result.Declarations))
+	}
+}
+
+func TestParseDuplicateIDError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Two config files with same namespace (same filename) but shouldn't happen
+	// Actually - two different files with same ID in same namespace
+	config1 := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"namespace": "shared",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+	config2 := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"namespace": "shared",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user2.json", "adapter": "zod"}
+		]
+	}`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "a.jsonc"), []byte(config1), 0644); err != nil {
+		t.Fatalf("failed to write config1: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "b.jsonc"), []byte(config2), 0644); err != nil {
+		t.Fatalf("failed to write config2: %v", err)
+	}
+
+	ctx := context.Background()
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected error for duplicate ID in same namespace")
+	}
+}
+
+func TestParseMultipleLanguagesError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	language.ResetForTests()
+	if err := langs.RegisterBuiltins(); err != nil {
+		t.Fatalf("failed to register built-in languages: %v", err)
+	}
+	t.Cleanup(func() {
+		language.ResetForTests()
+		if err := langs.RegisterBuiltins(); err != nil {
+			t.Fatalf("failed to restore built-in languages: %v", err)
+		}
+	})
+
+	if err := language.Register(language.Language{
+		Name:       "fake",
+		SchemaURL:  language.ValbridgeBaseURL + "fake.jsonc",
+		Extensions: []string{".fake"},
+	}); err != nil {
+		t.Fatalf("failed to register fake language: %v", err)
+	}
+
+	// One TypeScript, one fake language config
+	tsConfig := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+	fakeConfig := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/fake.jsonc",
+		"schemas": [
+			{"id": "Post", "sourceType": "url", "source": "https://example.com/post.json", "adapter": "fake"}
+		]
+	}`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "typescript.jsonc"), []byte(tsConfig), 0644); err != nil {
+		t.Fatalf("failed to write typescript config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "fake.jsonc"), []byte(fakeConfig), 0644); err != nil {
+		t.Fatalf("failed to write fake config: %v", err)
+	}
+
+	ctx := context.Background()
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected error for multiple languages without --lang filter")
+	}
+}
+
+func TestParseWithLanguageFilter(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	language.ResetForTests()
+	if err := langs.RegisterBuiltins(); err != nil {
+		t.Fatalf("failed to register built-in languages: %v", err)
+	}
+	t.Cleanup(func() {
+		language.ResetForTests()
+		if err := langs.RegisterBuiltins(); err != nil {
+			t.Fatalf("failed to restore built-in languages: %v", err)
+		}
+	})
+
+	if err := language.Register(language.Language{
+		Name:       "fake",
+		SchemaURL:  language.ValbridgeBaseURL + "fake.jsonc",
+		Extensions: []string{".fake"},
+	}); err != nil {
+		t.Fatalf("failed to register fake language: %v", err)
+	}
+
+	// One TypeScript, one fake language config
+	tsConfig := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+	fakeConfig := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/fake.jsonc",
+		"schemas": [
+			{"id": "Post", "sourceType": "url", "source": "https://example.com/post.json", "adapter": "fake"}
+		]
+	}`
+
+	if err := os.WriteFile(filepath.Join(tmpDir, "typescript.jsonc"), []byte(tsConfig), 0644); err != nil {
+		t.Fatalf("failed to write typescript config: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "fake.jsonc"), []byte(fakeConfig), 0644); err != nil {
+		t.Fatalf("failed to write fake config: %v", err)
+	}
+
+	ctx := context.Background()
+	result, err := Parse(ctx, tmpDir, "typescript")
+	if err != nil {
+		t.Fatalf("Parse with filter: %v", err)
+	}
+
+	if result.Language.Name != "typescript" {
+		t.Errorf("expected language 'typescript', got %q", result.Language.Name)
+	}
+	if len(result.Declarations) != 1 {
+		t.Errorf("expected 1 declaration (filtered), got %d", len(result.Declarations))
+	}
+}
+
+func TestDeclarationKey(t *testing.T) {
+	d := Declaration{
+		Namespace: "user",
+		ID:        "TestUrl",
+	}
+
+	if d.Key() != "user:TestUrl" {
+		t.Errorf("expected key 'user:TestUrl', got %q", d.Key())
+	}
+}
+
+func TestParseConfigFileEmptySchemas(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": []
+	}`
+
+	configPath := filepath.Join(tmpDir, "empty.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	if config == nil {
+		t.Fatal("expected config, got nil")
+	}
+	if len(config.Schemas) != 0 {
+		t.Errorf("expected 0 schemas, got %d", len(config.Schemas))
+	}
+}
+
+func TestParseConfigFileMalformedJSON(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{"truncated", `{"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc"`},
+		{"invalid syntax", `{"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc", schemas: []}`},
+		{"empty file", ``},
+		{"not json", `this is not json`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			configPath := filepath.Join(tmpDir, tt.name+".jsonc")
+			if err := os.WriteFile(configPath, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("failed to write config: %v", err)
+			}
+
+			_, err := parseConfigFile(configPath)
+			if err == nil {
+				t.Error("expected error for malformed JSON")
+			}
+		})
+	}
+}
+
+func TestParseConfigFileMissingSchemaURL(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Valid JSON but no $schema field
+	configContent := `{
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "no-schema.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	// Should return nil (not an valbridge config)
+	if config != nil {
+		t.Error("expected nil for config without $schema")
+	}
+}
+
+func TestParseConfigFileUnknownSchemaLanguage(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// github.com/vectorfy-co/valbridge URL but unknown language
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/unknown.jsonc",
+		"schemas": []
+	}`
+
+	configPath := filepath.Join(tmpDir, "unknown-lang.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	_, err := parseConfigFile(configPath)
+	if err == nil {
+		t.Error("expected error for unknown language in $schema")
+	}
+}
+
+func TestParseNoConfigFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Empty directory - no config files
+	ctx := context.Background()
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected error when no config files found")
+	}
+}
+
+func TestParseConfigFileInSubdirectory(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create subdirectory with config
+	subDir := filepath.Join(tmpDir, "schemas", "user")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatalf("failed to create subdir: %v", err)
+	}
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}
+		]
+	}`
+
+	configPath := filepath.Join(subDir, "user.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	ctx := context.Background()
+	result, err := Parse(ctx, tmpDir, "")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+
+	if len(result.Configs) != 1 {
+		t.Errorf("expected 1 config from subdirectory, got %d", len(result.Configs))
+	}
+}
+
+func TestParseConfigFileWithAllSourceTypes(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{"id": "FromURL", "sourceType": "url", "source": "https://example.com/schema.json", "adapter": "zod"},
+			{"id": "FromFile", "sourceType": "file", "source": "./local.json", "adapter": "zod"},
+			{"id": "Inline", "sourceType": "json", "source": {"type": "string"}, "adapter": "zod"},
+			{"id": "FromPydantic", "sourceType": "pydantic", "source": "app.models:UserModel", "adapter": "@vectorfyco/valbridge-zod", "moduleRoot": "./python", "pythonPath": ["./src"], "requirements": ["bootstrap"], "env": {"MODE": "test"}, "stubModules": ["missing.mod"]},
+			{"id": "FromZod", "sourceType": "zod", "source": "./src/schema.ts", "export": "userSchema", "runner": "pnpm", "adapter": "vectorfyco/valbridge-pydantic"}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "all-sources.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	if len(config.Schemas) != 5 {
+		t.Fatalf("expected 5 schemas, got %d", len(config.Schemas))
+	}
+
+	if config.Schemas[0].SourceType != SourceURL {
+		t.Errorf("expected first schema sourceType 'url', got %q", config.Schemas[0].SourceType)
+	}
+	if config.Schemas[1].SourceType != SourceFile {
+		t.Errorf("expected second schema sourceType 'file', got %q", config.Schemas[1].SourceType)
+	}
+	if config.Schemas[2].SourceType != SourceJSON {
+		t.Errorf("expected third schema sourceType 'json', got %q", config.Schemas[2].SourceType)
+	}
+	if config.Schemas[3].SourceType != SourcePydantic {
+		t.Errorf("expected fourth schema sourceType 'pydantic', got %q", config.Schemas[3].SourceType)
+	}
+	if config.Schemas[3].ModuleRoot != "./python" {
+		t.Errorf("expected moduleRoot to be preserved, got %q", config.Schemas[3].ModuleRoot)
+	}
+	if len(config.Schemas[3].PythonPath) != 1 || config.Schemas[3].PythonPath[0] != "./src" {
+		t.Errorf("expected pythonPath to be preserved, got %#v", config.Schemas[3].PythonPath)
+	}
+	if config.Schemas[4].SourceType != SourceZod {
+		t.Errorf("expected fifth schema sourceType 'zod', got %q", config.Schemas[4].SourceType)
+	}
+	if config.Schemas[4].Export != "userSchema" {
+		t.Errorf("expected zod export to be preserved, got %q", config.Schemas[4].Export)
+	}
+	if config.Schemas[4].Runner != "pnpm" {
+		t.Errorf("expected zod runner to be preserved, got %q", config.Schemas[4].Runner)
+	}
+}
+
+func TestParseConfigFileWithNativeSourceDeclarations(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "UserFromPydantic",
+				"sourceType": "pydantic",
+				"source": "app.models:UserModel",
+				"moduleRoot": "./python",
+				"pythonPath": ["./src"],
+				"requirements": ["bootstrap_module"],
+				"env": {"MODE": "test"},
+				"stubModules": ["missing_dependency"],
+				"adapter": "@vectorfyco/valbridge-zod"
+			},
+			{
+				"id": "UserFromZod",
+				"sourceType": "zod",
+				"source": "./src/schemas/user.ts",
+				"export": "userSchema",
+				"runner": "pnpm",
+				"adapter": "vectorfyco/valbridge-pydantic"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "native.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	result, err := Parse(context.Background(), tmpDir, "")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+
+	if len(result.Declarations) != 2 {
+		t.Fatalf("expected 2 declarations, got %d", len(result.Declarations))
+	}
+
+	pydanticDecl := result.Declarations[0]
+	if pydanticDecl.SourceType != SourcePydantic {
+		t.Fatalf("expected first declaration to be pydantic, got %q", pydanticDecl.SourceType)
+	}
+	if pydanticDecl.ModuleRoot != "./python" {
+		t.Errorf("expected moduleRoot to be preserved, got %q", pydanticDecl.ModuleRoot)
+	}
+	if len(pydanticDecl.Requirements) != 1 || pydanticDecl.Requirements[0] != "bootstrap_module" {
+		t.Errorf("expected requirements to be preserved, got %#v", pydanticDecl.Requirements)
+	}
+	if pydanticDecl.Env["MODE"] != "test" {
+		t.Errorf("expected env to be preserved, got %#v", pydanticDecl.Env)
+	}
+
+	zodDecl := result.Declarations[1]
+	if zodDecl.SourceType != SourceZod {
+		t.Fatalf("expected second declaration to be zod, got %q", zodDecl.SourceType)
+	}
+	if zodDecl.Export != "userSchema" {
+		t.Errorf("expected export to be preserved, got %q", zodDecl.Export)
+	}
+	if zodDecl.Runner != "pnpm" {
+		t.Errorf("expected runner to be preserved, got %q", zodDecl.Runner)
+	}
+}
+
+func TestParseResultDeclarationsByNamespace(t *testing.T) {
+	result := &ParseResult{
+		Declarations: []Declaration{
+			{Namespace: "user", ID: "User"},
+			{Namespace: "user", ID: "Profile"},
+			{Namespace: "post", ID: "Post"},
+		},
+	}
+
+	byNs := result.DeclarationsByNamespace()
+
+	if len(byNs) != 2 {
+		t.Errorf("expected 2 namespaces, got %d", len(byNs))
+	}
+	if len(byNs["user"]) != 2 {
+		t.Errorf("expected 2 user declarations, got %d", len(byNs["user"]))
+	}
+	if len(byNs["post"]) != 1 {
+		t.Errorf("expected 1 post declaration, got %d", len(byNs["post"]))
+	}
+}
+
+func TestParseResultDeclarationsByAdapter(t *testing.T) {
+	result := &ParseResult{
+		Declarations: []Declaration{
+			{Namespace: "user", ID: "User", Adapter: "zod"},
+			{Namespace: "user", ID: "Profile", Adapter: "zod"},
+			{Namespace: "post", ID: "Post", Adapter: "@valbridge/pydantic"},
+		},
+	}
+
+	byAdapter := result.DeclarationsByAdapter()
+
+	if len(byAdapter) != 2 {
+		t.Errorf("expected 2 adapters, got %d", len(byAdapter))
+	}
+	if len(byAdapter["zod"]) != 2 {
+		t.Errorf("expected 2 zod declarations, got %d", len(byAdapter["zod"]))
+	}
+	if len(byAdapter["@valbridge/pydantic"]) != 1 {
+		t.Errorf("expected 1 pydantic declaration, got %d", len(byAdapter["@valbridge/pydantic"]))
+	}
+}
+
+func TestParseContextCancellation(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a config file
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [{"id": "User", "sourceType": "url", "source": "https://example.com/user.json", "adapter": "zod"}]
+	}`
+	if err := os.WriteFile(filepath.Join(tmpDir, "test.jsonc"), []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected context cancellation error")
+	}
+}
+
+func TestParseConfigFileNonExistent(t *testing.T) {
+	_, err := parseConfigFile("/nonexistent/path/config.jsonc")
+	if err == nil {
+		t.Error("expected error for non-existent file")
+	}
+}
+
+func TestParseHeadersOnURLSourceType(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "Auth",
+				"sourceType": "url",
+				"source": "https://example.com/auth.json",
+				"adapter": "zod",
+				"headers": {
+					"Authorization": "Bearer ${TOKEN}"
+				}
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "auth.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	ctx := context.Background()
+	result, err := Parse(ctx, tmpDir, "")
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+
+	if len(result.Declarations) != 1 {
+		t.Fatalf("expected 1 declaration, got %d", len(result.Declarations))
+	}
+
+	decl := result.Declarations[0]
+	if len(decl.Headers) != 1 {
+		t.Errorf("expected 1 header, got %d", len(decl.Headers))
+	}
+	if decl.Headers["Authorization"] != "Bearer ${TOKEN}" {
+		t.Errorf("expected header value 'Bearer ${TOKEN}', got %q", decl.Headers["Authorization"])
+	}
+}
+
+func TestParseHeadersOnFileSourceTypeError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "Invalid",
+				"sourceType": "file",
+				"source": "./schema.json",
+				"adapter": "zod",
+				"headers": {
+					"X-Custom": "value"
+				}
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "invalid.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	ctx := context.Background()
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected error for headers on file sourceType")
+	}
+	if err != nil && !strings.Contains(err.Error(), "headers are only allowed") {
+		t.Errorf("expected 'headers are only allowed' error, got: %v", err)
+	}
+}
+
+func TestParseHeadersOnJSONSourceTypeError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "Invalid",
+				"sourceType": "json",
+				"source": {"type": "object"},
+				"adapter": "zod",
+				"headers": {
+					"X-Custom": "value"
+				}
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "invalid.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	ctx := context.Background()
+	_, err := Parse(ctx, tmpDir, "")
+	if err == nil {
+		t.Error("expected error for headers on json sourceType")
+	}
+	if err != nil && !strings.Contains(err.Error(), "headers are only allowed") {
+		t.Errorf("expected 'headers are only allowed' error, got: %v", err)
+	}
+}
+
+func TestParseZodSourceTypeRequiresExport(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "MissingExport",
+				"sourceType": "zod",
+				"source": "./src/schema.ts",
+				"adapter": "vectorfyco/valbridge-pydantic"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "invalid.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	_, err := Parse(context.Background(), tmpDir, "")
+	if err == nil {
+		t.Fatal("expected error for missing zod export")
+	}
+	if !strings.Contains(err.Error(), `sourceType "zod" requires export`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

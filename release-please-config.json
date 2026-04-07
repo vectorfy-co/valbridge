@@ -1,0 +1,37 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "pull-request-title-pattern": "chore(release): release${component} ${version}",
+  "release-type": "node",
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "packages": {
+    "typescript/packages/core": {
+      "release-type": "node",
+      "component": "ts-core"
+    },
+    "typescript/packages/client": {
+      "release-type": "node",
+      "component": "ts-client"
+    },
+    "typescript/packages/adapters/zod": {
+      "release-type": "node",
+      "component": "ts-zod"
+    },
+    "python/packages/core": {
+      "release-type": "python",
+      "component": "py-core"
+    },
+    "python/packages/client": {
+      "release-type": "python",
+      "component": "py-client"
+    },
+    "python/packages/adapters/pydantic": {
+      "release-type": "python",
+      "component": "py-pydantic"
+    }
+  },
+  "separate-pull-requests": true,
+  "tag-separator": "-",
+  "include-component-in-tag": true,
+  "include-v-in-tag": true
+}

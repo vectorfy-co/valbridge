@@ -1,0 +1,19 @@
+{
+	"name": "@vectorfyco/valbridge-zod-bridge",
+	"version": "0.1.0",
+	"type": "module",
+	"description": "Workspace-local Zod bridge helpers for valbridge",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit"
+	}
+}

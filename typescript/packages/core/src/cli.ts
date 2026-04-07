@@ -1,0 +1,31 @@
+import type { ConvertInput, ConvertResult } from "./types.js";
+
+/**
+ * Creates a CLI handler for valbridge adapters.
+ * Reads JSON array of ConvertInput from stdin, calls convert for each, outputs JSON array of ConvertResult.
+ *
+ * @example
+ * ```typescript
+ * #!/usr/bin/env node
+ * import { createAdapterCLI } from "@vectorfyco/valbridge-core";
+ * import { convert } from "./index";
+ *
+ * createAdapterCLI(convert);
+ * ```
+ */
+export function createAdapterCLI(
+  convert: (input: ConvertInput) => ConvertResult
+): void {
+  const chunks: string[] = [];
+  process.stdin.on("data", (chunk) => chunks.push(String(chunk)));
+  process.stdin.on("end", () => {
+    try {
+      const inputs: ConvertInput[] = JSON.parse(chunks.join(""));
+      const outputs = inputs.map(convert);
+      console.log(JSON.stringify(outputs));
+    } catch (err) {
+      console.error(err instanceof Error ? err.message : err);
+      process.exit(1);
+    }
+  });
+}

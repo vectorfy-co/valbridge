@@ -1,0 +1,48 @@
+{
+	// Another config file - namespace defaults to "another"
+	// Multiple config files are merged into one output
+	"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+	"schemas": [
+		{
+			"id": "TSConfig",
+			"sourceType": "url",
+			"source": "https://json.schemastore.org/tsconfig.json",
+			"adapter": "@vectorfyco/valbridge-zod"
+		},
+		{
+			"id": "TSConfigNative",
+			"sourceType": "url",
+			"source": "https://json.schemastore.org/tsconfig.json",
+			"adapter": "@vectorfyco/valbridge-zod"
+		},
+		{
+			"id": "Native",
+			"sourceType": "json",
+			"source": {
+				"type": "object",
+				"properties": {
+					"fruits": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"enum": ["apple", "orange", "pear"]
+						}
+					},
+					"vegetables": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"veggieName": { "type": "string" },
+								"veggieLike": { "type": "boolean" }
+							},
+							"required": ["veggieName", "veggieLike"]
+						}
+					}
+				},
+				"required": ["fruits", "vegetables"]
+			},
+			"adapter": "@vectorfyco/valbridge-zod"
+		}
+	]
+}

@@ -1,0 +1,33 @@
+# Generated
+xschema
+cli/xschema
+cli/cli
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Compliance test harness files
+xschema-harness-*
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# TypeScript/Node
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+dist/

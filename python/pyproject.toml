@@ -1,0 +1,27 @@
+[tool.uv.workspace]
+members = [
+    "packages/core",
+    "packages/client",
+    "packages/adapters/*",
+    "packages/pydantic-extractor",
+    "packages/pydantic-bridge",
+    "example",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "mypy>=1.19.1",
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+    "packages/core/tests",
+    "packages/client/tests",
+    "packages/adapters/pydantic/tests",
+    "packages/pydantic-extractor/tests",
+]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true

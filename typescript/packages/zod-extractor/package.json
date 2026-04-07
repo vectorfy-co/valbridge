@@ -1,0 +1,27 @@
+{
+	"name": "@vectorfyco/valbridge-zod-extractor",
+	"version": "0.1.0",
+	"type": "module",
+	"description": "Workspace-local Zod extraction utilities for valbridge",
+	"bin": {
+		"valbridge-zod-extractor": "./dist/index.js"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"test": "pnpm exec vitest run",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@vectorfyco/valbridge-core": "workspace:*",
+		"zod": "^4.3.6"
+	}
+}

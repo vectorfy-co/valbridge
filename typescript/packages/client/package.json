@@ -1,0 +1,19 @@
+{
+	"name": "@vectorfyco/valbridge",
+	"version": "0.0.5",
+	"type": "module",
+	"description": "Runtime schema lookup client for generated valbridge TypeScript artifacts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc",
+		"typecheck": "tsc --noEmit"
+	}
+}

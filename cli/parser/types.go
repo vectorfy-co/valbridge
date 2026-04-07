@@ -1,0 +1,97 @@
+package parser
+
+import (
+	"encoding/json"
+
+	"github.com/vectorfy-co/valbridge/language"
+)
+
+// SourceType represents how to retrieve a schema
+type SourceType string
+
+const (
+	SourceURL      SourceType = "url"
+	SourceFile     SourceType = "file"
+	SourceJSON     SourceType = "json"
+	SourcePydantic SourceType = "pydantic"
+	SourceZod      SourceType = "zod"
+)
+
+// ConfigFileRaw is the raw JSON structure of an valbridge config file
+type ConfigFileRaw struct {
+	Schema    string           `json:"$schema"`
+	Namespace string           `json:"namespace,omitempty"` // optional namespace override
+	Schemas   []SchemaEntryRaw `json:"schemas"`
+}
+
+// SchemaEntryRaw represents one schema entry in a config file
+type SchemaEntryRaw struct {
+	ID           string            `json:"id"`
+	SourceType   SourceType        `json:"sourceType"`        // "url", "file", "json", "pydantic", "zod"
+	Source       json.RawMessage   `json:"source"`            // string for url/file/pydantic/zod, object for json
+	Adapter      string            `json:"adapter"`           // full package name e.g., "zod"
+	Headers      map[string]string `json:"headers,omitempty"` // HTTP headers for URL sources (supports ${ENV_VAR} syntax)
+	ModuleRoot   string            `json:"moduleRoot,omitempty"`
+	PythonPath   []string          `json:"pythonPath,omitempty"`
+	Requirements []string          `json:"requirements,omitempty"`
+	Env          map[string]string `json:"env,omitempty"`
+	StubModules  []string          `json:"stubModules,omitempty"`
+	Export       string            `json:"export,omitempty"`
+	Runner       string            `json:"runner,omitempty"`
+}
+
+// ConfigFile represents a parsed valbridge config file
+type ConfigFile struct {
+	Path      string             // absolute path to config file
+	Namespace string             // derived from filename or explicit
+	Language  *language.Language // detected from $schema URL
+	Schemas   []SchemaEntryRaw   // raw schema entries
+}
+
+// Declaration represents a schema declaration ready for retrieval
+type Declaration struct {
+	Namespace    string            // e.g., "user"
+	ID           string            // e.g., "TestUrl"
+	SourceType   SourceType        // "url", "file", "json", "pydantic", "zod"
+	Source       json.RawMessage   // URL string, file path string, module target/path, or inline JSON object
+	Adapter      string            // full adapter package e.g., "zod"
+	ConfigPath   string            // path to config file (for relative file resolution)
+	Headers      map[string]string // HTTP headers for URL sources (raw, with ${ENV_VAR} syntax)
+	ModuleRoot   string
+	PythonPath   []string
+	Requirements []string
+	Env          map[string]string
+	StubModules  []string
+	Export       string
+	Runner       string
+}
+
+// Key returns the full namespaced key like "user:TestUrl"
+func (d Declaration) Key() string {
+	return d.Namespace + ":" + d.ID
+}
+
+// ParseResult contains all parsed config files and declarations
+type ParseResult struct {
+	Language     *language.Language // detected language (error if multiple)
+	Configs      []ConfigFile       // all parsed config files
+	Declarations []Declaration      // flattened declarations from all configs
+}
+
+// DeclarationsByNamespace groups declarations by namespace
+func (r *ParseResult) DeclarationsByNamespace() map[string][]Declaration {
+	result := make(map[string][]Declaration)
+	for _, d := range r.Declarations {
+		result[d.Namespace] = append(result[d.Namespace], d)
+	}
+	return result
+}
+
+// DeclarationsByAdapter groups declarations by adapter
+func (r *ParseResult) DeclarationsByAdapter() map[string][]Declaration {
+	result := make(map[string][]Declaration)
+	for _, d := range r.Declarations {
+		result[d.Adapter] = append(result[d.Adapter], d)
+	}
+	return result
+}

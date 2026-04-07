@@ -1,0 +1,14 @@
+{
+  "name": "valbridge-typescript-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "pnpm exec tsx main.ts",
+    "generate": "cd ../../cli && go run . generate --project ../typescript/example"
+  },
+  "dependencies": {
+    "@vectorfyco/valbridge": "workspace:*",
+    "@vectorfyco/valbridge-zod": "workspace:*",
+    "zod": "^4.3.6"
+  }
+}
