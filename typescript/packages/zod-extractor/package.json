@@ -1,6 +1,6 @@
 {
 	"name": "@vectorfyco/valbridge-zod-extractor",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"description": "Workspace-local Zod extraction utilities for valbridge",
 	"bin": {
