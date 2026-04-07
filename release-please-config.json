@@ -6,9 +6,17 @@
   "bump-minor-pre-major": true,
   "bump-patch-for-minor-pre-major": true,
   "packages": {
+    "cli": {
+      "release-type": "go",
+      "component": "cli"
+    },
     "typescript/packages/core": {
       "release-type": "node",
       "component": "ts-core"
+    },
+    "typescript/packages/cli": {
+      "release-type": "node",
+      "component": "ts-cli"
     },
     "typescript/packages/client": {
       "release-type": "node",
@@ -29,6 +37,10 @@
     "python/packages/core": {
       "release-type": "python",
       "component": "py-core"
+    },
+    "python/packages/cli": {
+      "release-type": "python",
+      "component": "py-cli"
     },
     "python/packages/client": {
       "release-type": "python",

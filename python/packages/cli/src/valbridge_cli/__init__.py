@@ -1,0 +1,2 @@
+"""Installable valbridge CLI launcher."""
+

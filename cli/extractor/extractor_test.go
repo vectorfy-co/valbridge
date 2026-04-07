@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/vectorfy-co/valbridge/parser"
@@ -137,5 +138,51 @@ func TestFindWorkspaceRootFallsBackAcrossSearchRoots(t *testing.T) {
 	}
 	if found != workspaceRoot {
 		t.Fatalf("expected fallback workspace root %q, got %q", workspaceRoot, found)
+	}
+}
+
+func TestResolveWorkspaceRootUsesExplicitEnv(t *testing.T) {
+	workspaceRoot := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(workspaceRoot, "typescript", "packages", "zod-extractor"), 0o755); err != nil {
+		t.Fatalf("failed to create fake workspace probe: %v", err)
+	}
+
+	t.Setenv("VALBRIDGE_WORKSPACE_ROOT", workspaceRoot)
+
+	found, err := resolveWorkspaceRoot(
+		t.TempDir(),
+		filepath.Join("typescript", "packages", "zod-extractor"),
+	)
+	if err != nil {
+		t.Fatalf("resolveWorkspaceRoot: %v", err)
+	}
+	if found != workspaceRoot {
+		t.Fatalf("expected explicit workspace root %q, got %q", workspaceRoot, found)
+	}
+}
+
+func TestBuildZodExtractorCandidatesPrefersPublishedByDefault(t *testing.T) {
+	candidates, err := buildZodExtractorCandidates(repoRoot(t), "/tmp/schema.ts", "Schema", "pnpm")
+	if err != nil {
+		t.Fatalf("buildZodExtractorCandidates: %v", err)
+	}
+	if len(candidates) == 0 {
+		t.Fatal("expected at least one candidate")
+	}
+	if !strings.HasPrefix(candidates[0].Label, "published-zod-extractor-") {
+		t.Fatalf("expected published extractor first, got %q", candidates[0].Label)
+	}
+}
+
+func TestBuildPydanticExtractorCandidatesPrefersPublishedByDefault(t *testing.T) {
+	candidates, err := buildPydanticExtractorCandidates(repoRoot(t), []string{"app.models:User"})
+	if err != nil {
+		t.Fatalf("buildPydanticExtractorCandidates: %v", err)
+	}
+	if len(candidates) == 0 {
+		t.Fatal("expected at least one candidate")
+	}
+	if !strings.HasPrefix(candidates[0].Label, "published-python-extractor-") {
+		t.Fatalf("expected published extractor first, got %q", candidates[0].Label)
 	}
 }

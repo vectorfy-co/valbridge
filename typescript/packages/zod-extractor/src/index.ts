@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { register } from "tsx/esm/api";
 
 import type { Diagnostic, JSONSchema } from "@vectorfyco/valbridge-core";
 
@@ -62,7 +63,9 @@ export async function extractFromModule(
 	target: ZodExtractionTarget,
 ): Promise<ExtractedSchemaResult> {
 	const moduleUrl = toFileModuleUrl(target.modulePath);
-	const loaded = await import(moduleUrl);
+	const scope = register({ namespace: `valbridge-zod-extractor-${Date.now()}` });
+	const loaded = await scope.import(moduleUrl, import.meta.url);
+	await scope.unregister();
 	const schema = loaded[target.exportName];
 
 	if (!schema || typeof schema !== "object" || !("_zod" in schema)) {

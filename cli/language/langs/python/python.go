@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/language"
 )
 
@@ -107,7 +108,22 @@ func (adapterInvoker) BuildAdapterCommand(ctx context.Context, input language.Ad
 		binName = adapterBinPrefix + binName
 	}
 
-	runner, runnerArgs, err := detectRunnerInDir(projectRoot)
+	if config.WorkspaceRoot() != "" || config.PreferWorkspace() {
+		if cmdSpec, err := buildWorkspaceAdapterCommand(projectRoot, binName); err == nil {
+			return cmdSpec, nil
+		}
+	}
+
+	if cmdSpec, err := buildPublishedAdapterCommand(pkgName); err == nil {
+		return cmdSpec, nil
+	}
+
+	return buildWorkspaceAdapterCommand(projectRoot, binName)
+}
+
+func buildWorkspaceAdapterCommand(projectRoot string, binName string) (language.CommandSpec, error) {
+	workspaceDir := resolveWorkspaceDir(projectRoot)
+	runner, runnerArgs, err := detectRunnerInDir(workspaceDir)
 	if err != nil {
 		return language.CommandSpec{}, fmt.Errorf("failed to detect python runner: %w", err)
 	}
@@ -115,8 +131,40 @@ func (adapterInvoker) BuildAdapterCommand(ctx context.Context, input language.Ad
 	return language.CommandSpec{
 		Cmd:  runner,
 		Args: append(runnerArgs, binName),
-		Dir:  projectRoot,
+		Dir:  workspaceDir,
 	}, nil
+}
+
+func buildPublishedAdapterCommand(packageName string) (language.CommandSpec, error) {
+	switch {
+	case commandExists("uvx"):
+		return language.CommandSpec{
+			Cmd:  "uvx",
+			Args: []string{packageName},
+		}, nil
+	case commandExists("uv"):
+		return language.CommandSpec{
+			Cmd:  "uv",
+			Args: []string{"tool", "run", packageName},
+		}, nil
+	case commandExists("pipx"):
+		return language.CommandSpec{
+			Cmd:  "pipx",
+			Args: []string{"run", packageName},
+		}, nil
+	default:
+		return language.CommandSpec{}, fmt.Errorf(
+			"no published python adapter runner available for %q; install uv/uvx or pipx",
+			packageName,
+		)
+	}
+}
+
+func resolveWorkspaceDir(projectRoot string) string {
+	if root := config.WorkspaceRoot(); root != "" {
+		return filepath.Join(root, "python")
+	}
+	return projectRoot
 }
 
 func buildSchemasImport(importPath string) string {

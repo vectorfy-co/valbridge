@@ -2,6 +2,7 @@
 members = [
     "packages/core",
     "packages/client",
+    "packages/cli",
     "packages/adapters/*",
     "packages/pydantic-extractor",
     "packages/pydantic-bridge",
@@ -18,6 +19,7 @@ dev-dependencies = [
 testpaths = [
     "packages/core/tests",
     "packages/client/tests",
+    "packages/cli/tests",
     "packages/adapters/pydantic/tests",
     "packages/pydantic-extractor/tests",
 ]
