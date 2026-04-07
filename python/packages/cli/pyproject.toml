@@ -1,6 +1,6 @@
 [project]
 name = "valbridge-cli"
-version = "0.4.0"
+version = "0.1.0"
 description = "Installable CLI launcher for valbridge"
 requires-python = ">=3.10"
 readme = "README.md"

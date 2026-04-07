@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0 (2026-04-07)
+
+
+### Features
+
+* import valbridge monorepo ([2a7ed24](https://github.com/vectorfy-co/valbridge/commit/2a7ed246c8cb87206d13860fe01155de24de1ae8))
+* publish installable valbridge cli ([#18](https://github.com/vectorfy-co/valbridge/issues/18)) ([b4ce0b4](https://github.com/vectorfy-co/valbridge/commit/b4ce0b4b2785324178b88753c2127e4306f38e70))
+
+
+### Bug Fixes
+
+* **ci:** align zod adapter checks with pnpm runtime ([#13](https://github.com/vectorfy-co/valbridge/issues/13)) ([8b0b537](https://github.com/vectorfy-co/valbridge/commit/8b0b53706a1adceae986c80e32778b3b4aa1c270))
+
 ## [0.3.0](https://github.com/vectorfy-co/valbridge/compare/cli-v0.2.1...cli-v0.3.0) (2026-02-12)
 
 
