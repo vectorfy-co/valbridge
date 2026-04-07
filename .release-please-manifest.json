@@ -3,7 +3,7 @@
   "typescript/packages/zod-extractor": "0.1.1",
   "typescript/packages/zod-bridge": "0.1.1",
   "typescript/packages/client": "0.0.6",
-  "typescript/packages/core": "0.2.1",
+  "typescript/packages/core": "0.2.2",
   "python/packages/adapters/pydantic": "0.1.0",
   "python/packages/pydantic-extractor": "0.1.0",
   "python/packages/pydantic-bridge": "0.1.0",
