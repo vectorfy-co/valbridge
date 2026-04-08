@@ -2,7 +2,7 @@
 
 # ![valbridge](https://img.shields.io/static/v1?label=&message=valbridge&color=1D4ED8&style=for-the-badge&logo=databricks&logoColor=white)
 
-**Stop hand-writing validators twice. Generate type-safe Zod and Pydantic from a single JSON Schema.**
+**Stop hand-writing validators twice. Convert directly between Zod and Pydantic -- bidirectional, type-safe, zero drift.**
 
 <br />
 
@@ -62,34 +62,76 @@ If you build AI applications, you know this pain. Your LLM outputs structured da
 
 This is not a tooling gap. This is a **correctness gap**. Every hand-maintained cross-language validator pair is a ticking time bomb. The bigger your team, the faster the drift. The more schemas you have, the more surfaces silently diverge.
 
-**valbridge eliminates validator drift entirely.** Define your schema once in JSON Schema. Generate native, idiomatic, type-safe Zod and Pydantic validators from a single source of truth. When the schema changes, both sides update together. No hand-syncing. No silent drift. No 2 AM pages.
+**valbridge eliminates validator drift entirely.** Point it at your existing Zod schemas and it generates Pydantic models. Point it at your Pydantic models and it generates Zod schemas. Direct, bidirectional conversion -- no intermediate format to learn, no JSON Schema to write by hand. Keep working in the language you know. When the source changes, the other side updates automatically. No hand-syncing. No silent drift. No 2 AM pages.
+
+**Why valbridge exists:** When Zod v4 shipped, nothing could convert between it and Pydantic. Existing tools targeted Zod v3 and broke on v4's new API surface. valbridge was built from scratch for Zod v4+ and Pydantic v2 -- not patched on top of v3 tooling. It handles the hard cases other tools skip: discriminated unions, recursive types, conditional schemas, tuples with rest items, `oneOf` exactly-one semantics, and more. The result is **100% JSON Schema Test Suite compliance** for Zod and **99.8% for Pydantic** -- across every draft from draft3 to 2020-12.
 
 ---
 
 <a id="quick-start"></a>
 
-## ![Quick Start](https://img.shields.io/badge/Quick%20Start-3%20steps-059669?style=for-the-badge&logo=serverless&logoColor=white)
+## ![Quick Start](https://img.shields.io/badge/Quick%20Start-2%20steps-059669?style=for-the-badge&logo=serverless&logoColor=white)
 
-### 1. Define your schema
+### Pydantic to Zod
 
-Create a JSON Schema file (e.g., `schemas/user.json`):
+Already have Pydantic models? Generate Zod schemas directly from them.
 
-```json
+**1. Create a config file** (`models.valbridge.jsonc`):
+
+```jsonc
 {
-  "type": "object",
-  "properties": {
-    "id": { "type": "string", "format": "uuid" },
-    "name": { "type": "string", "minLength": 1 },
-    "email": { "type": "string", "format": "email" },
-    "role": { "type": "string", "enum": ["admin", "user", "viewer"] }
-  },
-  "required": ["id", "name", "email", "role"]
+  "$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+  "schemas": [
+    {
+      "id": "User",
+      "sourceType": "pydantic",
+      "source": "app.models:UserModel",
+      "adapter": "@vectorfyco/valbridge-zod"
+    }
+  ]
 }
 ```
 
-### 2. Create a config file
+**2. Generate:**
 
-For **TypeScript** (e.g., `user.valbridge.jsonc`):
+```bash
+npx -y @vectorfyco/valbridge-cli generate
+```
+
+That's it. valbridge extracts the schema from your Pydantic model and generates a type-safe Zod validator. No JSON Schema to write.
+
+### Zod to Pydantic
+
+Already have Zod schemas? Generate Pydantic models directly from them.
+
+**1. Create a config file** (`schemas.valbridge.jsonc`):
+
+```jsonc
+{
+  "$schema": "https://github.com/vectorfy-co/valbridge/schemas/python.jsonc",
+  "schemas": [
+    {
+      "id": "User",
+      "sourceType": "zod",
+      "source": "./src/schemas/user.ts",
+      "export": "userSchema",
+      "adapter": "vectorfyco/valbridge-pydantic"
+    }
+  ]
+}
+```
+
+**2. Generate:**
+
+```bash
+uvx valbridge-cli generate
+```
+
+valbridge extracts the schema from your Zod code and generates a native Pydantic BaseModel. No JSON Schema to write.
+
+### From JSON Schema (also supported)
+
+If you prefer a schema-first workflow, you can also generate from JSON Schema files, URLs, or inline definitions:
 
 ```jsonc
 {
@@ -104,34 +146,6 @@ For **TypeScript** (e.g., `user.valbridge.jsonc`):
   ]
 }
 ```
-
-For **Python** (e.g., `user.valbridge.jsonc`):
-
-```jsonc
-{
-  "$schema": "https://github.com/vectorfy-co/valbridge/schemas/python.jsonc",
-  "schemas": [
-    {
-      "id": "User",
-      "sourceType": "file",
-      "source": "./schemas/user.json",
-      "adapter": "vectorfyco/valbridge-pydantic"
-    }
-  ]
-}
-```
-
-### 3. Generate
-
-```bash
-# TypeScript (zero-install)
-npx -y @vectorfyco/valbridge-cli generate
-
-# Python (zero-install)
-uvx valbridge-cli generate
-```
-
-That's it. You now have type-safe, native validators in both languages from a single schema.
 
 ---
 
@@ -209,15 +223,81 @@ pip install pydantic
 
 | Feature | Details |
 | --- | --- |
-| ![Zod](https://img.shields.io/badge/Zod-4.x-3E67B1?style=flat&logo=zod&logoColor=white) | Generates idiomatic Zod 4.x validators with full TypeScript type inference |
-| ![Pydantic](https://img.shields.io/badge/Pydantic-2.x-E92063?style=flat&logo=pydantic&logoColor=white) | Generates native Pydantic v2 BaseModel classes with field metadata |
-| ![JSON Schema](https://img.shields.io/badge/JSON%20Schema-2020--12-000000?style=flat&logo=json&logoColor=white) | Full JSON Schema 2020-12 support with `$ref` resolution, bundling, and vocabulary filtering |
+| ![Bidirectional](https://img.shields.io/badge/Bidirectional-Direct%20Conversion-6366f1?style=flat&logo=databricks&logoColor=white) | Convert directly between Zod and Pydantic in both directions -- no JSON Schema to write by hand |
+| ![Zod v4+](https://img.shields.io/badge/Zod-v4%2B%20Only-3E67B1?style=flat&logo=zod&logoColor=white) | Built from scratch for Zod v4+ (not patched v3 tooling). Uses native v4 APIs: `.meta()`, `.prefault()`, `z.uuidv4()`, discriminated unions, pipe transforms |
+| ![Pydantic v2](https://img.shields.io/badge/Pydantic-v2.12%2B-E92063?style=flat&logo=pydantic&logoColor=white) | Generates native Pydantic v2 BaseModel classes with `Field()` metadata, `StrictStr`/`StrictInt`, discriminator support |
+| ![100% Compliance](https://img.shields.io/badge/Compliance-100%25%20Zod%20%7C%2099.8%25%20Pydantic-059669?style=flat&logo=checkmarx&logoColor=white) | Passes the official JSON Schema Test Suite across all drafts (draft3 through 2020-12) |
+| ![Complex Types](https://img.shields.io/badge/Types-Discriminated%20Unions%2C%20Recursive%2C%20Conditional-f59e0b?style=flat&logo=databricks&logoColor=white) | Handles the hard cases: discriminated unions, recursive `$ref`, `allOf` intersections, `if`/`then`/`else`, tuples, `oneOf`, `patternProperties`, and [more](docs/type-support.md) |
+| ![Metadata](https://img.shields.io/badge/Metadata-Descriptions%2C%20Titles%2C%20Examples-8B5CF6?style=flat&logo=opentelemetry&logoColor=white) | Transports `description`, `title`, `examples`, `default`, `deprecated`, `readOnly`, `writeOnly` across languages -- nothing is silently dropped |
 | ![Type Safety](https://img.shields.io/badge/Type%20Safe-Compile%20Time-10b981?style=flat&logo=typescript&logoColor=white) | Generated code is fully typed -- schema keys autocomplete, invalid lookups fail at compile time |
-| ![Bidirectional](https://img.shields.io/badge/Bidirectional-Extract%20%2B%20Generate-6366f1?style=flat&logo=databricks&logoColor=white) | Extract JSON Schema from existing Zod/Pydantic code, or generate validators from JSON Schema |
+| ![Extraction](https://img.shields.io/badge/Extraction-Automatic-f59e0b?style=flat&logo=databricks&logoColor=white) | Point at existing Zod or Pydantic code and valbridge extracts the schema automatically |
 | ![CLI](https://img.shields.io/badge/CLI-Go%20Binary-00ADD8?style=flat&logo=go&logoColor=white) | Fast Go binary with parallel schema fetching, caching, dry-run mode, and watch support |
-| ![Bridge Helpers](https://img.shields.io/badge/Bridge-Helpers-f59e0b?style=flat&logo=databricks&logoColor=white) | Small, repo-local helpers for cross-language patterns that lack a native equivalent |
-| ![Compliance](https://img.shields.io/badge/Compliance-Test%20Suite-059669?style=flat&logo=checkmarx&logoColor=white) | Built-in JSON Schema Test Suite runner to verify adapter correctness |
+| ![JSON Schema](https://img.shields.io/badge/JSON%20Schema-2020--12-000000?style=flat&logo=json&logoColor=white) | Also supports JSON Schema 2020-12 files/URLs as input with `$ref` resolution and bundling |
 | ![Diagnostics](https://img.shields.io/badge/Diagnostics-Structured-8B5CF6?style=flat&logo=opentelemetry&logoColor=white) | Structured diagnostics for every non-exact mapping; strict mode fails on drift |
+
+---
+
+<a id="type-support"></a>
+
+## ![Type Support](https://img.shields.io/badge/Type%20Support-What%20It%20Handles-f59e0b?style=for-the-badge&logo=databricks&logoColor=white)
+
+valbridge handles complex types that other tools skip. Here's what converts cleanly between Zod and Pydantic:
+
+| Category | What's Supported | Zod Output | Pydantic Output |
+| --- | --- | --- | --- |
+| **Discriminated unions** | Tagged unions with a discriminator key | `z.discriminatedUnion("type", [...])` | `Annotated[Union[A, B], Field(discriminator="type")]` |
+| **Recursive types** | Self-referencing `$ref` cycles | `z.lazy(() => schema)` | Forward reference strings + `model_rebuild()` |
+| **Intersections (`allOf`)** | Merging multiple object schemas | `z.intersection(a, b)` | Static field merge into single BaseModel |
+| **Exactly-one (`oneOf`)** | Must match exactly one sub-schema | `z.unknown().superRefine(...)` counting matches | `BeforeValidator` counting TypeAdapter matches |
+| **Conditional (`if/then/else`)** | Schema branching on conditions | `z.unknown().superRefine(...)` with branch dispatch | `BeforeValidator` with if-check and dispatch |
+| **Tuples** | Fixed-length arrays with positional types, rest items | `z.array().superRefine(...)` with positional checks | `BeforeValidator` with per-position TypeAdapter |
+| **Pattern properties** | Regex-keyed object validation | `.passthrough().superRefine(...)` with regex tests | `model_validator` with `re.search()` |
+| **Dependent schemas** | Properties required when another is present | `.superRefine(...)` conditional schema application | `model_validator` checking co-presence |
+| **String formats** | `email`, `uri`, `uuid`, `date-time`, `ipv4`, `ipv6`, `hostname` | Native Zod methods (`.email()`, `.url()`, `.uuid()`, `.datetime()`) | Pydantic format types + `AnyUrl`, `EmailStr` |
+| **Const / Enum** | Fixed values including complex objects and mixed types | `z.literal()` or deep equality refinement | `Literal[...]` or `_make_const_validator` with JSON equality |
+| **Nullable** | Optional null types | `.nullable()` | `T \| None` |
+| **Type guards** | Per-type dispatch (`string` vs `object` vs `array`) | `z.unknown().superRefine(...)` with typeof checks | `BeforeValidator` with `isinstance` dispatch |
+
+### Metadata transport
+
+valbridge preserves metadata across languages -- nothing is silently dropped:
+
+| Metadata | Zod v4 Output | Pydantic v2 Output |
+| --- | --- | --- |
+| `description` | `.describe("...")` | `Field(description="...")` |
+| `title` | `.meta({ title: "..." })` | `Field(title="...")` |
+| `examples` | `.meta({ examples: [...] })` | `Field(examples=[...])` |
+| `default` | `.default(value)` | `Field(default=value)` |
+| `deprecated` | `.meta({ deprecated: true })` | `Field(deprecated=True)` |
+| `readOnly` / `writeOnly` | `.meta({ readOnly: true })` | `Field(json_schema_extra={"readOnly": True})` |
+
+### Zod v4-specific features
+
+These Zod v4 APIs are natively supported -- not approximated or shimmed:
+
+- `z.uuidv4()`, `z.uuidv6()`, `z.uuidv7()` -- versioned UUID validators
+- `.meta()` -- rich metadata beyond description (title, examples, deprecated)
+- `.prefault(value)` -- default that applies before validation (v4-only)
+- `z.pipe()` -- transform pipelines detected and annotated
+- `z.discriminatedUnion()` -- first-class discriminator support
+- `z.iso.datetime()`, `z.iso.date()`, `z.iso.time()` -- ISO string validators
+
+For the complete mapping table with fidelity classifications, see [docs/direct-converter/feature-matrix.md](docs/direct-converter/feature-matrix.md).
+
+### Compliance results
+
+Tested against the official [JSON Schema Test Suite](https://github.com/json-schema-org/JSON-Schema-Test-Suite):
+
+| Draft | Zod Adapter | Pydantic Adapter |
+| --- | --- | --- |
+| draft2020-12 | 1048/1048 (100%) | 1046/1048 (99.8%) |
+| draft2019-09 | 1034/1034 (100%) | 1032/1034 (99.8%) |
+| draft7 | 909/909 (100%) | 907/909 (99.8%) |
+| draft6 | 825/825 (100%) | 823/825 (99.8%) |
+| draft4 | 606/606 (100%) | 605/606 (99.8%) |
+| draft3 | 429/429 (100%) | 428/429 (99.8%) |
+
+The only excluded tests are `$dynamicRef`/`$recursiveAnchor` (dynamic scope tracking that cannot be compiled to static validators) and metaschema self-validation.
 
 ---
 
@@ -225,27 +305,54 @@ pip install pydantic
 
 ## ![How It Works](https://img.shields.io/badge/How%20It%20Works-Pipeline-1f2937?style=for-the-badge&logo=planetscale&logoColor=white)
 
-valbridge uses a multi-stage pipeline to convert JSON Schemas into native validators:
+valbridge converts directly between Zod and Pydantic in both directions. The extractors pull a schema from your existing code, and the adapters generate native code in the target language:
 
 ```mermaid
 flowchart LR
-    A["JSON Schema\n(file, URL, inline)"] --> B["Parse\n& Validate"]
-    B --> C["Resolve $refs\n& Bundle"]
-    C --> D["Adapter\n(Zod / Pydantic)"]
-    D --> E["Native Code\n+ Type Inference"]
+    subgraph Source["Your Code"]
+        Z["Zod Schema"]
+        P["Pydantic Model"]
+        J["JSON Schema\n(file / URL)"]
+    end
 
-    style A fill:#e3f2fd,stroke:#1D4ED8
-    style B fill:#fff3e0,stroke:#f59e0b
-    style C fill:#e8f5e9,stroke:#059669
-    style D fill:#fce4ec,stroke:#E92063
-    style E fill:#f3e5f5,stroke:#7c3aed
+    subgraph Extract["Extract"]
+        ZE["Zod\nExtractor"]
+        PE["Pydantic\nExtractor"]
+    end
+
+    IR["Intermediate\nRepresentation"]
+
+    subgraph Generate["Generate"]
+        ZA["Zod\nAdapter"]
+        PA["Pydantic\nAdapter"]
+    end
+
+    subgraph Output["Generated Code"]
+        ZO["Zod Validators\n+ TypeScript Types"]
+        PO["Pydantic Models\n+ Python Types"]
+    end
+
+    Z --> ZE --> IR
+    P --> PE --> IR
+    J --> IR
+    IR --> ZA --> ZO
+    IR --> PA --> PO
+
+    style Source fill:#f3e5f5,stroke:#7c3aed
+    style Extract fill:#fff3e0,stroke:#f59e0b
+    style IR fill:#e3f2fd,stroke:#1D4ED8
+    style Generate fill:#e8f5e9,stroke:#059669
+    style Output fill:#fce4ec,stroke:#E92063
 ```
 
-1. **Parse** -- Discovers `*.valbridge.jsonc` config files in your project, validates them, and detects the target language
-2. **Retrieve** -- Fetches schemas from files, URLs, or inline JSON (with parallel fetching and caching)
-3. **Process** -- Crawls `$ref` references, validates against JSON Schema metaschemas, and bundles into self-contained schemas
-4. **Generate** -- Invokes the appropriate adapter (Zod or Pydantic) to emit native, idiomatic validator code
-5. **Inject** -- Writes generated files with import merging, manifest tracking, and stale file cleanup
+**You never touch the intermediate representation.** valbridge handles extraction, conversion, and code generation automatically:
+
+1. **Parse** -- Discovers `*.valbridge.jsonc` config files, detects the source type and target language
+2. **Extract** -- For `pydantic` or `zod` sources, runs the extractor to pull a schema from your existing code
+3. **Retrieve** -- For `file`, `url`, or `json` sources, fetches schemas directly (with parallel fetching and caching)
+4. **Process** -- Resolves `$ref` references, validates, and bundles into self-contained schemas
+5. **Generate** -- Invokes the target adapter (Zod or Pydantic) to emit native, idiomatic code
+6. **Inject** -- Writes generated files with import merging, manifest tracking, and stale file cleanup
 
 ---
 
@@ -289,14 +396,14 @@ The filename (minus extension) becomes the **namespace** for all schemas in that
 
 ```jsonc
 {
-  // Language is detected from the $schema URL
+  // Target language is detected from the $schema URL
   "$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
   "schemas": [
     {
-      "id": "User",                              // Schema ID (unique within namespace)
-      "sourceType": "file",                       // "file", "url", or "json"
-      "source": "./schemas/user.json",            // Path, URL, or inline schema
-      "adapter": "@vectorfyco/valbridge-zod"      // Which adapter generates the code
+      "id": "User",
+      "sourceType": "pydantic",                   // Extract from existing Pydantic model
+      "source": "app.models:UserModel",           // module:Class format
+      "adapter": "@vectorfyco/valbridge-zod"      // Generate Zod output
     }
   ]
 }
@@ -306,9 +413,32 @@ The filename (minus extension) becomes the **namespace** for all schemas in that
 
 | Source Type | Description | Example |
 | --- | --- | --- |
+| `pydantic` | Extract from an existing Pydantic model | `"app.models:UserModel"` |
+| `zod` | Extract from an existing Zod schema | `"./src/schemas/user.ts"` (+ `"export"` field) |
 | `file` | Local JSON Schema file (relative to config) | `"./schemas/user.json"` |
 | `url` | Remote JSON Schema (HTTP/HTTPS) | `"https://api.example.com/schemas/user"` |
 | `json` | Inline JSON Schema object | `{ "type": "object", ... }` |
+
+### Pydantic extraction options
+
+When using `sourceType: "pydantic"`:
+
+| Field | Description |
+| --- | --- |
+| `source` | `module:Class` format (required) |
+| `pythonPath` | Import paths to prepend before loading |
+| `moduleRoot` | Module roots for project-local imports |
+| `stubModules` | Placeholder modules for optional imports |
+| `env` | Environment variables to inject before import |
+
+### Zod extraction options
+
+When using `sourceType: "zod"`:
+
+| Field | Description |
+| --- | --- |
+| `source` | Path to TypeScript file (required) |
+| `export` | Named export in that file (required) |
 
 ### CLI flags
 
@@ -437,41 +567,40 @@ valbridge/
 ```mermaid
 flowchart TD
     subgraph Entry["CLI Entry Point"]
-        A[valbridge generate] --> B[Load .env + resolve paths]
+        A["valbridge generate"] --> B["Load .env + resolve paths"]
     end
 
     subgraph Parse["1. Parse"]
-        B --> C[Discover *.valbridge.jsonc files]
-        C --> D[Validate $schema URLs]
-        D --> E[Detect language + namespace]
+        B --> C["Discover *.valbridge.jsonc files"]
+        C --> D["Detect source type + target language"]
     end
 
-    subgraph Retrieve["2. Retrieve"]
-        E --> F[Fetch schemas in parallel]
-        F --> G[Cache results]
+    subgraph Extract["2. Extract / Retrieve"]
+        D --> E{"Source type?"}
+        E -->|"pydantic"| E1["Run pydantic-extractor"]
+        E -->|"zod"| E2["Run zod-extractor"]
+        E -->|"file / url / json"| E3["Fetch schema directly"]
+        E1 --> F["Schema ready"]
+        E2 --> F
+        E3 --> F
     end
 
     subgraph Process["3. Process"]
-        G --> H[Crawl $ref graph]
-        H --> I[Validate against metaschemas]
-        I --> J[Bundle into self-contained schemas]
+        F --> G["Resolve $refs + validate + bundle"]
     end
 
     subgraph Generate["4. Generate"]
-        J --> K[Group by adapter]
-        K --> L["Invoke adapter (stdin/stdout JSON)"]
-        L --> M[Collect native code output]
+        G --> H["Invoke target adapter"]
+        H --> I["Emit native code"]
     end
 
     subgraph Inject["5. Inject"]
-        M --> N[Merge imports + build template]
-        N --> O[Write files + update manifest]
-        O --> P[Clean stale files]
+        I --> J["Write files + update manifest"]
     end
 
     style Entry fill:#e1f5fe
     style Parse fill:#fff3e0
-    style Retrieve fill:#e8f5e9
+    style Extract fill:#e8f5e9
     style Process fill:#fce4ec
     style Generate fill:#f3e5f5
     style Inject fill:#e0f2f1

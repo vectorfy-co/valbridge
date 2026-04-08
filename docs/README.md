@@ -2,6 +2,12 @@
 
 Detailed technical documentation for the valbridge toolchain.
 
+## Type Support
+
+| Document | Description |
+| --- | --- |
+| [Type Support Reference](./type-support.md) | Complete mapping of every type and construct between Zod v4 and Pydantic v2, with compliance results |
+
 ## Architecture
 
 | Document | Description |
