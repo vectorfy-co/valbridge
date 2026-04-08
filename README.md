@@ -2,7 +2,7 @@
 
 # ![valbridge](https://img.shields.io/static/v1?label=&message=valbridge&color=1D4ED8&style=for-the-badge&logo=databricks&logoColor=white)
 
-**Stop hand-writing validators twice. Convert directly between Zod and Pydantic -- bidirectional, type-safe, zero drift.**
+**Stop hand-writing validators twice. Convert directly between Zod and Pydantic - bidirectional, type-safe, zero drift.**
 
 <br />
 
@@ -52,7 +52,7 @@
 
 ## ![The Problem](https://img.shields.io/badge/The%20Problem-Validation%20Drift-dc2626?style=for-the-badge&logo=target&logoColor=white)
 
-If you build AI applications, you know this pain. Your LLM outputs structured data. Your TypeScript frontend validates it with Zod. Your Python backend validates it with Pydantic. And somewhere between those two validators -- written by hand, months apart, by different people -- the contract silently breaks.
+If you build AI applications, you know this pain. Your LLM outputs structured data. Your TypeScript frontend validates it with Zod. Your Python backend validates it with Pydantic. And somewhere between those two validators - written by hand, months apart, by different people - the contract silently breaks.
 
 **The nightmare looks like this:**
 
@@ -62,9 +62,9 @@ If you build AI applications, you know this pain. Your LLM outputs structured da
 
 This is not a tooling gap. This is a **correctness gap**. Every hand-maintained cross-language validator pair is a ticking time bomb. The bigger your team, the faster the drift. The more schemas you have, the more surfaces silently diverge.
 
-**valbridge eliminates validator drift entirely.** Point it at your existing Zod schemas and it generates Pydantic models. Point it at your Pydantic models and it generates Zod schemas. Direct, bidirectional conversion -- no intermediate format to learn, no JSON Schema to write by hand. Keep working in the language you know. When the source changes, the other side updates automatically. No hand-syncing. No silent drift. No 2 AM pages.
+**valbridge eliminates validator drift entirely.** Point it at your existing Zod schemas and it generates Pydantic models. Point it at your Pydantic models and it generates Zod schemas. Direct, bidirectional conversion - no intermediate format to learn, no JSON Schema to write by hand. Keep working in the language you know. When the source changes, the other side updates automatically. No hand-syncing. No silent drift. No 2 AM pages.
 
-**Why valbridge exists:** When Zod v4 shipped, nothing could convert between it and Pydantic. Existing tools targeted Zod v3 and broke on v4's new API surface. valbridge was built from scratch for Zod v4+ and Pydantic v2 -- not patched on top of v3 tooling. It handles the hard cases other tools skip: discriminated unions, recursive types, conditional schemas, tuples with rest items, `oneOf` exactly-one semantics, and more. The result is **100% JSON Schema Test Suite compliance** for Zod and **99.8% for Pydantic** -- across every draft from draft3 to 2020-12.
+**Why valbridge exists:** When Zod v4 shipped, nothing could convert between it and Pydantic. Existing tools targeted Zod v3 and broke on v4's new API surface. valbridge was built from scratch for Zod v4+ and Pydantic v2 - not patched on top of v3 tooling. It handles the hard cases other tools skip: discriminated unions, recursive types, conditional schemas, tuples with rest items, `oneOf` exactly-one semantics, and more. The result is **100% JSON Schema Test Suite compliance** for Zod and **99.8% for Pydantic** - across every draft from draft3 to 2020-12.
 
 ---
 
@@ -223,13 +223,13 @@ pip install pydantic
 
 | Feature | Details |
 | --- | --- |
-| ![Bidirectional](https://img.shields.io/badge/Bidirectional-Direct%20Conversion-6366f1?style=flat&logo=databricks&logoColor=white) | Convert directly between Zod and Pydantic in both directions -- no JSON Schema to write by hand |
+| ![Bidirectional](https://img.shields.io/badge/Bidirectional-Direct%20Conversion-6366f1?style=flat&logo=databricks&logoColor=white) | Convert directly between Zod and Pydantic in both directions - no JSON Schema to write by hand |
 | ![Zod v4+](https://img.shields.io/badge/Zod-v4%2B%20Only-3E67B1?style=flat&logo=zod&logoColor=white) | Built from scratch for Zod v4+ (not patched v3 tooling). Uses native v4 APIs: `.meta()`, `.prefault()`, `z.uuidv4()`, discriminated unions, pipe transforms |
 | ![Pydantic v2](https://img.shields.io/badge/Pydantic-v2.12%2B-E92063?style=flat&logo=pydantic&logoColor=white) | Generates native Pydantic v2 BaseModel classes with `Field()` metadata, `StrictStr`/`StrictInt`, discriminator support |
 | ![100% Compliance](https://img.shields.io/badge/Compliance-100%25%20Zod%20%7C%2099.8%25%20Pydantic-059669?style=flat&logo=checkmarx&logoColor=white) | Passes the official JSON Schema Test Suite across all drafts (draft3 through 2020-12) |
 | ![Complex Types](https://img.shields.io/badge/Types-Discriminated%20Unions%2C%20Recursive%2C%20Conditional-f59e0b?style=flat&logo=databricks&logoColor=white) | Handles the hard cases: discriminated unions, recursive `$ref`, `allOf` intersections, `if`/`then`/`else`, tuples, `oneOf`, `patternProperties`, and [more](docs/type-support.md) |
-| ![Metadata](https://img.shields.io/badge/Metadata-Descriptions%2C%20Titles%2C%20Examples-8B5CF6?style=flat&logo=opentelemetry&logoColor=white) | Transports `description`, `title`, `examples`, `default`, `deprecated`, `readOnly`, `writeOnly` across languages -- nothing is silently dropped |
-| ![Type Safety](https://img.shields.io/badge/Type%20Safe-Compile%20Time-10b981?style=flat&logo=typescript&logoColor=white) | Generated code is fully typed -- schema keys autocomplete, invalid lookups fail at compile time |
+| ![Metadata](https://img.shields.io/badge/Metadata-Descriptions%2C%20Titles%2C%20Examples-8B5CF6?style=flat&logo=opentelemetry&logoColor=white) | Transports `description`, `title`, `examples`, `default`, `deprecated`, `readOnly`, `writeOnly` across languages - nothing is silently dropped |
+| ![Type Safety](https://img.shields.io/badge/Type%20Safe-Compile%20Time-10b981?style=flat&logo=typescript&logoColor=white) | Generated code is fully typed - schema keys autocomplete, invalid lookups fail at compile time |
 | ![Extraction](https://img.shields.io/badge/Extraction-Automatic-f59e0b?style=flat&logo=databricks&logoColor=white) | Point at existing Zod or Pydantic code and valbridge extracts the schema automatically |
 | ![CLI](https://img.shields.io/badge/CLI-Go%20Binary-00ADD8?style=flat&logo=go&logoColor=white) | Fast Go binary with parallel schema fetching, caching, dry-run mode, and watch support |
 | ![JSON Schema](https://img.shields.io/badge/JSON%20Schema-2020--12-000000?style=flat&logo=json&logoColor=white) | Also supports JSON Schema 2020-12 files/URLs as input with `$ref` resolution and bundling |
@@ -260,7 +260,7 @@ valbridge handles complex types that other tools skip. Here's what converts clea
 
 ### Metadata transport
 
-valbridge preserves metadata across languages -- nothing is silently dropped:
+valbridge preserves metadata across languages - nothing is silently dropped:
 
 | Metadata | Zod v4 Output | Pydantic v2 Output |
 | --- | --- | --- |
@@ -273,14 +273,14 @@ valbridge preserves metadata across languages -- nothing is silently dropped:
 
 ### Zod v4-specific features
 
-These Zod v4 APIs are natively supported -- not approximated or shimmed:
+These Zod v4 APIs are natively supported - not approximated or shimmed:
 
-- `z.uuidv4()`, `z.uuidv6()`, `z.uuidv7()` -- versioned UUID validators
-- `.meta()` -- rich metadata beyond description (title, examples, deprecated)
-- `.prefault(value)` -- default that applies before validation (v4-only)
-- `z.pipe()` -- transform pipelines detected and annotated
-- `z.discriminatedUnion()` -- first-class discriminator support
-- `z.iso.datetime()`, `z.iso.date()`, `z.iso.time()` -- ISO string validators
+- `z.uuidv4()`, `z.uuidv6()`, `z.uuidv7()` - versioned UUID validators
+- `.meta()` - rich metadata beyond description (title, examples, deprecated)
+- `.prefault(value)` - default that applies before validation (v4-only)
+- `z.pipe()` - transform pipelines detected and annotated
+- `z.discriminatedUnion()` - first-class discriminator support
+- `z.iso.datetime()`, `z.iso.date()`, `z.iso.time()` - ISO string validators
 
 For the complete mapping table with fidelity classifications, see [docs/direct-converter/feature-matrix.md](docs/direct-converter/feature-matrix.md).
 
@@ -347,12 +347,12 @@ flowchart LR
 
 **You never touch the intermediate representation.** valbridge handles extraction, conversion, and code generation automatically:
 
-1. **Parse** -- Discovers `*.valbridge.jsonc` config files, detects the source type and target language
-2. **Extract** -- For `pydantic` or `zod` sources, runs the extractor to pull a schema from your existing code
-3. **Retrieve** -- For `file`, `url`, or `json` sources, fetches schemas directly (with parallel fetching and caching)
-4. **Process** -- Resolves `$ref` references, validates, and bundles into self-contained schemas
-5. **Generate** -- Invokes the target adapter (Zod or Pydantic) to emit native, idiomatic code
-6. **Inject** -- Writes generated files with import merging, manifest tracking, and stale file cleanup
+1. **Parse** - Discovers `*.valbridge.jsonc` config files, detects the source type and target language
+2. **Extract** - For `pydantic` or `zod` sources, runs the extractor to pull a schema from your existing code
+3. **Retrieve** - For `file`, `url`, or `json` sources, fetches schemas directly (with parallel fetching and caching)
+4. **Process** - Resolves `$ref` references, validates, and bundles into self-contained schemas
+5. **Generate** - Invokes the target adapter (Zod or Pydantic) to emit native, idiomatic code
+6. **Inject** - Writes generated files with import merging, manifest tracking, and stale file cleanup
 
 ---
 
