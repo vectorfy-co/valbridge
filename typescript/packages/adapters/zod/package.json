@@ -1,53 +1,53 @@
 {
-	"name": "@vectorfyco/valbridge-zod",
-	"version": "0.4.1",
-	"type": "module",
-	"description": "Render valbridge IR into Zod schemas",
-	"license": "MIT",
-	"homepage": "https://github.com/vectorfy-co/valbridge",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/vectorfy-co/valbridge.git",
-		"directory": "typescript/packages/adapters/zod"
-	},
-	"bugs": {
-		"url": "https://github.com/vectorfy-co/valbridge/issues"
-	},
-	"keywords": [
-		"valbridge",
-		"zod",
-		"json-schema",
-		"adapter",
-		"code-generation",
-		"typescript",
-		"validation"
-	],
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"bin": {
-		"valbridge-zod": "./dist/cli.js"
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "tsc",
-		"test": "pnpm exec vitest run",
-		"typecheck": "tsc --noEmit",
-		"compliance": "ADAPTER=$PWD && cd ../../../../cli && go run . compliance --dev-report --adapter-path $ADAPTER",
-		"type-fidelity": "pnpm exec tsx type-probe/type-fidelity.ts"
-	},
-	"dependencies": {
-		"@vectorfyco/valbridge-core": "workspace:*"
-	},
-	"devDependencies": {
-		"zod": "^4.3.6"
-	},
-	"peerDependencies": {
-		"zod": "^4.0.0"
-	}
+  "name": "@vectorfyco/valbridge-zod",
+  "version": "1.0.2",
+  "type": "module",
+  "description": "Render valbridge IR into Zod schemas",
+  "license": "MIT",
+  "homepage": "https://github.com/vectorfy-co/valbridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorfy-co/valbridge.git",
+    "directory": "typescript/packages/adapters/zod"
+  },
+  "bugs": {
+    "url": "https://github.com/vectorfy-co/valbridge/issues"
+  },
+  "keywords": [
+    "valbridge",
+    "zod",
+    "json-schema",
+    "adapter",
+    "code-generation",
+    "typescript",
+    "validation"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "valbridge-zod": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "pnpm exec vitest run",
+    "typecheck": "tsc --noEmit",
+    "compliance": "ADAPTER=$PWD && cd ../../../../cli && go run . compliance --dev-report --adapter-path $ADAPTER",
+    "type-fidelity": "pnpm exec tsx type-probe/type-fidelity.ts"
+  },
+  "dependencies": {
+    "@vectorfyco/valbridge-core": "workspace:*"
+  },
+  "devDependencies": {
+    "zod": "^4.3.6"
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
+  }
 }

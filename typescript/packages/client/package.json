@@ -1,38 +1,38 @@
 {
-	"name": "@vectorfyco/valbridge",
-	"version": "0.4.1",
-	"type": "module",
-	"description": "Runtime schema lookup client for generated valbridge TypeScript artifacts",
-	"license": "MIT",
-	"homepage": "https://github.com/vectorfy-co/valbridge",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/vectorfy-co/valbridge.git",
-		"directory": "typescript/packages/client"
-	},
-	"bugs": {
-		"url": "https://github.com/vectorfy-co/valbridge/issues"
-	},
-	"keywords": [
-		"valbridge",
-		"runtime-client",
-		"schema-registry",
-		"typescript",
-		"zod",
-		"validation",
-		"generated-code"
-	],
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "tsc",
-		"typecheck": "tsc --noEmit"
-	}
+  "name": "@vectorfyco/valbridge",
+  "version": "1.0.2",
+  "type": "module",
+  "description": "Runtime schema lookup client for generated valbridge TypeScript artifacts",
+  "license": "MIT",
+  "homepage": "https://github.com/vectorfy-co/valbridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorfy-co/valbridge.git",
+    "directory": "typescript/packages/client"
+  },
+  "bugs": {
+    "url": "https://github.com/vectorfy-co/valbridge/issues"
+  },
+  "keywords": [
+    "valbridge",
+    "runtime-client",
+    "schema-registry",
+    "typescript",
+    "zod",
+    "validation",
+    "generated-code"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  }
 }

@@ -301,7 +301,7 @@ wheels = [
 
 [[package]]
 name = "valbridge"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/client" }
 
 [package.optional-dependencies]
@@ -315,12 +315,12 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "valbridge-cli"
-version = "0.4.0"
+version = "0.1.0"
 source = { editable = "packages/cli" }
 
 [[package]]
 name = "valbridge-core"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/core" }
 
 [package.dev-dependencies]
@@ -339,7 +339,7 @@ dev = [
 
 [[package]]
 name = "valbridge-pydantic"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/adapters/pydantic" }
 dependencies = [
     { name = "pydantic" },
@@ -366,12 +366,12 @@ dev = [
 
 [[package]]
 name = "valbridge-pydantic-bridge"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/pydantic-bridge" }
 
 [[package]]
 name = "valbridge-pydantic-extractor"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "packages/pydantic-extractor" }
 dependencies = [
     { name = "pydantic" },

@@ -1,37 +1,37 @@
 {
-	"name": "@vectorfyco/valbridge-zod-bridge",
-	"version": "0.4.1",
-	"type": "module",
-	"description": "Workspace-local Zod bridge helpers for valbridge",
-	"license": "MIT",
-	"homepage": "https://github.com/vectorfy-co/valbridge",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/vectorfy-co/valbridge.git",
-		"directory": "typescript/packages/zod-bridge"
-	},
-	"bugs": {
-		"url": "https://github.com/vectorfy-co/valbridge/issues"
-	},
-	"keywords": [
-		"valbridge",
-		"zod",
-		"bridge",
-		"helpers",
-		"typescript",
-		"code-generation"
-	],
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "tsc",
-		"typecheck": "tsc --noEmit"
-	}
+  "name": "@vectorfyco/valbridge-zod-bridge",
+  "version": "1.0.2",
+  "type": "module",
+  "description": "Workspace-local Zod bridge helpers for valbridge",
+  "license": "MIT",
+  "homepage": "https://github.com/vectorfy-co/valbridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorfy-co/valbridge.git",
+    "directory": "typescript/packages/zod-bridge"
+  },
+  "bugs": {
+    "url": "https://github.com/vectorfy-co/valbridge/issues"
+  },
+  "keywords": [
+    "valbridge",
+    "zod",
+    "bridge",
+    "helpers",
+    "typescript",
+    "code-generation"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  }
 }

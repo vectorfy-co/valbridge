@@ -1,47 +1,47 @@
 {
-	"name": "@vectorfyco/valbridge-zod-extractor",
-	"version": "0.4.2",
-	"type": "module",
-	"description": "Workspace-local Zod extraction utilities for valbridge",
-	"license": "MIT",
-	"homepage": "https://github.com/vectorfy-co/valbridge",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/vectorfy-co/valbridge.git",
-		"directory": "typescript/packages/zod-extractor"
-	},
-	"bugs": {
-		"url": "https://github.com/vectorfy-co/valbridge/issues"
-	},
-	"keywords": [
-		"valbridge",
-		"zod",
-		"extractor",
-		"json-schema",
-		"typescript",
-		"introspection",
-		"validation"
-	],
-	"bin": {
-		"valbridge-zod-extractor": "./dist/index.js"
-	},
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"files": [
-		"dist"
-	],
-	"scripts": {
-		"build": "tsc",
-		"test": "pnpm exec vitest run",
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"@vectorfyco/valbridge-core": "workspace:*",
-		"tsx": "^4.21.0",
-		"zod": "^4.3.6"
-	}
+  "name": "@vectorfyco/valbridge-zod-extractor",
+  "version": "1.0.2",
+  "type": "module",
+  "description": "Workspace-local Zod extraction utilities for valbridge",
+  "license": "MIT",
+  "homepage": "https://github.com/vectorfy-co/valbridge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vectorfy-co/valbridge.git",
+    "directory": "typescript/packages/zod-extractor"
+  },
+  "bugs": {
+    "url": "https://github.com/vectorfy-co/valbridge/issues"
+  },
+  "keywords": [
+    "valbridge",
+    "zod",
+    "extractor",
+    "json-schema",
+    "typescript",
+    "introspection",
+    "validation"
+  ],
+  "bin": {
+    "valbridge-zod-extractor": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "pnpm exec vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@vectorfyco/valbridge-core": "workspace:*",
+    "tsx": "^4.21.0",
+    "zod": "^4.3.6"
+  }
 }
