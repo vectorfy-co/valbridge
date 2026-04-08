@@ -497,7 +497,8 @@ Parse config files and generate native validators:
 
 ```bash
 valbridge generate                          # Generate all
-valbridge generate --lang typescript        # TypeScript only
+valbridge generate --lang typescript        # TypeScript (Zod) only
+valbridge generate --lang python            # Python (Pydantic) only
 valbridge generate --dry-run                # Preview without writing
 valbridge generate --strict                 # Fail on any warnings
 valbridge generate -v                       # Verbose output
@@ -510,6 +511,7 @@ Extract a single schema as JSON (useful for debugging):
 ```bash
 valbridge extract --schema user:Profile
 valbridge extract --schema user:Profile --lang typescript
+valbridge extract --schema user:Profile --lang python
 ```
 
 ### `compliance`
@@ -517,7 +519,11 @@ valbridge extract --schema user:Profile --lang typescript
 Run the JSON Schema Test Suite against an adapter:
 
 ```bash
+# Zod adapter
 valbridge compliance --lang typescript --adapter-path ./typescript/packages/adapters/zod
+
+# Pydantic adapter
+valbridge compliance --lang python --adapter-path ./python/packages/adapters/pydantic
 ```
 
 ---
