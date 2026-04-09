@@ -751,16 +751,20 @@ def render_number(node: NumberNode) -> RenderResult:
     """
     imports: set[str] = set()
 
-    # Use strict types to prevent coercion
+    # Use strict types unless canonical metadata explicitly requests coercion.
     if node.integer:
-        imports.add("from pydantic import StrictInt")
-        base_type = "StrictInt"
+        if node.coercion_mode == "coerce":
+            base_type = "int"
+        else:
+            imports.add("from pydantic import StrictInt")
+            base_type = "StrictInt"
     else:
-        # JSON Schema 'number' accepts both integers and floats
-        # StrictFloat accepts integers too (converts to float), which is fine
-        # for validation purposes
-        imports.add("from pydantic import StrictFloat")
-        base_type = "StrictFloat"
+        # JSON Schema 'number' accepts both integers and floats.
+        if node.coercion_mode == "coerce":
+            base_type = "float"
+        else:
+            imports.add("from pydantic import StrictFloat")
+            base_type = "StrictFloat"
 
     has_constraints = node.constraints is not None and (
         node.constraints.minimum is not None
@@ -848,6 +852,8 @@ def render_boolean(node: BooleanNode) -> RenderResult:
     Uses StrictBool to ensure proper JSON Schema semantics where integers
     like 0 and 1 are NOT valid booleans.
     """
+    if node.coercion_mode == "coerce":
+        return RenderResult(code="", type_expr="bool", imports=set())
     return RenderResult(
         code="", type_expr="StrictBool", imports={"from pydantic import StrictBool"}
     )

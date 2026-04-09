@@ -33,6 +33,7 @@ export interface ValbridgeFormatDetail {
 
 export interface ValbridgeExtension {
   version?: string;
+  sourceProfile?: "json-schema" | "pydantic" | "zod";
   coercionMode?: "strict" | "coerce" | "passthrough";
   transforms?: Array<string | ValbridgeTransform>;
   formatDetail?: ValbridgeFormatDetail;

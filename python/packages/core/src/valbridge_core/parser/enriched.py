@@ -10,6 +10,7 @@ from valbridge_core.parser.context import create_context
 _KNOWN_VALBRIDGE_KEYS = frozenset(
     {
         "version",
+        "sourceProfile",
         "coercionMode",
         "transforms",
         "formatDetail",

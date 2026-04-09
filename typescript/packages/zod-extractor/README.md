@@ -2,7 +2,7 @@
 
 # ![valbridge-zod-extractor](https://img.shields.io/static/v1?label=&message=%40vectorfyco%2Fvalbridge-zod-extractor&color=3E67B1&style=for-the-badge&logo=zod&logoColor=white)
 
-Extract JSON Schema from existing Zod schemas, enriched with `x-valbridge` annotations for high-fidelity cross-language generation.
+Extract valbridge-compatible schema data from existing Zod schemas for high-fidelity Pydantic generation.
 
 <a href="https://www.npmjs.com/package/@vectorfyco/valbridge-zod-extractor"><img src="https://img.shields.io/npm/v/@vectorfyco/valbridge-zod-extractor?style=flat&logo=npm&logoColor=white" alt="npm" /></a>
 <a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>

@@ -1,20 +1,20 @@
 [project]
 name = "valbridge-core"
-version = "1.0.2"
-description = "Core IR types, diagnostics, and enriched schema parsing for valbridge"
+version = "1.0.3"
+description = "Core IR types, diagnostics, and conversion utilities for valbridge"
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "vectorfyco" }]
 maintainers = [{ name = "vectorfyco" }]
 keywords = [
-    "json-schema",
     "validation",
     "pydantic",
     "code-generation",
     "typescript",
     "zod",
-    "schema",
+    "schema-conversion",
+    "cross-language",
     "type-safety",
 ]
 classifiers = [

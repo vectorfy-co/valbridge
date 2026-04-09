@@ -90,16 +90,21 @@ func Generate(ctx context.Context, input GenerateBatchInput) ([]adapter.ConvertR
 	// Build adapter input from already-bundled schemas
 	adapterInput := make([]adapter.ConvertInput, len(input.Schemas))
 	for i, s := range input.Schemas {
+		if err := adapter.ValidateSchemaCapabilities(input.AdapterRef, s.SourceProfile, s.Schema); err != nil {
+			return nil, err
+		}
+
 		varName := s.Namespace + "_" + s.ID
 		if lang.BuildVarName != nil {
 			varName = lang.BuildVarName(s.Namespace, s.ID)
 		}
 
 		adapterInput[i] = adapter.ConvertInput{
-			Namespace: s.Namespace,
-			ID:        s.ID,
-			VarName:   varName,
-			Schema:    s.Schema, // already bundled and filtered by Processor
+			Namespace:     s.Namespace,
+			ID:            s.ID,
+			VarName:       varName,
+			Schema:        s.Schema, // already bundled and filtered by Processor
+			SourceProfile: adapter.SourceProfile(s.SourceProfile),
 		}
 	}
 

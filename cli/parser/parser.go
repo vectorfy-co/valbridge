@@ -12,6 +12,7 @@ import (
 
 	"github.com/tailscale/hujson"
 	"github.com/vectorfy-co/valbridge/language"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 	"github.com/vectorfy-co/valbridge/ui"
 )
 
@@ -27,6 +28,12 @@ func validateStringSource(source json.RawMessage, sourceType SourceType, namespa
 }
 
 func validateSchemaEntry(namespace string, schema SchemaEntryRaw) error {
+	if schema.SourceProfile != "" {
+		if _, err := sourceprofile.Parse(schema.SourceProfile); err != nil {
+			return fmt.Errorf("schema %q in namespace %q: %w", schema.ID, namespace, err)
+		}
+	}
+
 	switch schema.SourceType {
 	case SourceURL, SourceFile, SourcePydantic, SourceZod:
 		if err := validateStringSource(schema.Source, schema.SourceType, namespace, schema.ID); err != nil {
@@ -328,6 +335,7 @@ func mergeDeclarations(configs []ConfigFile) ([]Declaration, error) {
 				Namespace:    config.Namespace,
 				ID:           schema.ID,
 				SourceType:   schema.SourceType,
+				SourceProfile: inferSourceProfile(schema),
 				Source:       schema.Source,
 				Adapter:      schema.Adapter,
 				ConfigPath:   config.Path,
@@ -344,4 +352,15 @@ func mergeDeclarations(configs []ConfigFile) ([]Declaration, error) {
 	}
 
 	return declarations, nil
+}
+
+func inferSourceProfile(schema SchemaEntryRaw) sourceprofile.Profile {
+	if schema.SourceProfile != "" {
+		profile, err := sourceprofile.Parse(schema.SourceProfile)
+		if err == nil {
+			return profile
+		}
+	}
+
+	return sourceprofile.InferFromSourceType(string(schema.SourceType))
 }

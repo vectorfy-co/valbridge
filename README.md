@@ -493,7 +493,7 @@ user = valbridge("user:Profile").validate_python(data)
 
 ### `generate`
 
-Parse config files and generate native validators:
+Generate Zod validators or Pydantic models from your valbridge configs:
 
 ```bash
 valbridge generate                          # Generate all

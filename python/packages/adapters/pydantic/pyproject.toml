@@ -1,6 +1,6 @@
 [project]
 name = "valbridge-pydantic"
-version = "1.0.2"
+version = "1.0.3"
 description = "Render valbridge IR into Pydantic v2 models"
 requires-python = ">=3.10"
 readme = "README.md"

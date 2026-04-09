@@ -1,8 +1,8 @@
 {
   "name": "@vectorfyco/valbridge-core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
-  "description": "Core IR, diagnostics, and parser utilities for valbridge",
+  "description": "Core IR, diagnostics, and conversion utilities for valbridge",
   "license": "MIT",
   "homepage": "https://github.com/vectorfy-co/valbridge",
   "repository": {
@@ -15,13 +15,13 @@
   },
   "keywords": [
     "valbridge",
-    "json-schema",
-    "schema",
-    "parser",
+    "schema-conversion",
+    "cross-language",
     "ir",
     "typescript",
     "validation",
-    "zod"
+    "zod",
+    "pydantic"
   ],
   "exports": {
     ".": {

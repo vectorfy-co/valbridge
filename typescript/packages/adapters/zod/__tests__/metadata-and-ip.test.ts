@@ -89,6 +89,100 @@ describe("metadata emission", () => {
 });
 
 describe("enriched rendering", () => {
+	test("renders coercion-aware string, number, and boolean schemas", () => {
+		const schemaCode = getSchemaCode({
+			type: "object",
+			properties: {
+				name: {
+					type: "string",
+					"x-valbridge": { version: "1.0", coercionMode: "coerce" },
+				},
+				count: {
+					type: "number",
+					"x-valbridge": { version: "1.0", coercionMode: "coerce" },
+				},
+				enabled: {
+					type: "boolean",
+					"x-valbridge": { version: "1.0", coercionMode: "coerce" },
+				},
+			},
+		});
+
+		expect(schemaCode).toContain("z.coerce.string()");
+		expect(schemaCode).toContain("z.coerce.number()");
+		expect(schemaCode).toContain("z.preprocess((value) => {");
+
+		const schema = evalSchema(schemaCode);
+		const parsed = schema.safeParse({
+			name: 42,
+			count: "7.5",
+			enabled: "true",
+		});
+
+		expect(parsed.success).toBe(true);
+		if (parsed.success) {
+			expect(parsed.data).toEqual({
+				name: "42",
+				count: 7.5,
+				enabled: true,
+			});
+		}
+
+		expect(
+			schema.safeParse({ name: 42, count: "7.5", enabled: "false" }).data?.enabled,
+		).toBe(false);
+		expect(
+			schema.safeParse({ name: 42, count: "7.5", enabled: "0" }).data?.enabled,
+		).toBe(false);
+		expect(
+			schema.safeParse({ name: 42, count: "7.5", enabled: "yes" }).data?.enabled,
+		).toBe(true);
+		expect(
+			schema.safeParse({ name: 42, count: "7.5", enabled: "" }).success,
+		).toBe(false);
+	});
+
+	test("renders UUID format detail without losing coercion", () => {
+		const schemaCode = getSchemaCode({
+			type: "string",
+			"x-valbridge": {
+				version: "1.0",
+				coercionMode: "coerce",
+				formatDetail: { kind: "uuid", version: "v4" },
+			},
+		});
+
+		expect(schemaCode).toContain("z.coerce.string().check(z.uuidv4())");
+
+		const schema = evalSchema(schemaCode);
+		expect(schema.safeParse(550).success).toBe(false);
+		expect(schema.safeParse("550e8400-e29b-41d4-a716-446655440000").success).toBe(
+			true,
+		);
+		expect(schema.safeParse("550e8400-e29b-11d4-a716-446655440000").success).toBe(
+			false,
+		);
+	});
+
+	test("uses explicit boolean parsing instead of JS truthiness for coercion", () => {
+		const schemaCode = getSchemaCode({
+			type: "boolean",
+			"x-valbridge": { version: "1.0", coercionMode: "coerce" },
+		});
+
+		const schema = evalSchema(schemaCode);
+
+		for (const value of ["t", "T", "true", "True", "1", "yes", "on", "y", 1, true]) {
+			expect(schema.safeParse(value).data).toBe(true);
+		}
+		for (const value of ["f", "F", "false", "False", "0", "no", "off", "n", 0, false]) {
+			expect(schema.safeParse(value).data).toBe(false);
+		}
+		for (const value of ["", "maybe", " false ", " 1 ", "\ttrue\n", 2, -1, null, [], {}]) {
+			expect(schema.safeParse(value).success).toBe(false);
+		}
+	});
+
 	test("renders formatDetail, transforms, and prefault from x-valbridge", () => {
 		const schemaCode = getSchemaCode({
 			type: "string",

@@ -1,6 +1,6 @@
 {
   "name": "@vectorfyco/valbridge",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
   "description": "Runtime schema lookup client for generated valbridge TypeScript artifacts",
   "license": "MIT",

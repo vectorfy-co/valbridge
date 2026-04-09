@@ -6,6 +6,7 @@ export interface ConvertInput {
   id: string;
   varName: string;
   schema: object;
+  sourceProfile?: "json-schema" | "pydantic" | "zod";
 }
 
 export interface ConvertResult {

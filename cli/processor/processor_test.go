@@ -74,10 +74,11 @@ func TestCrawlAndFetch_NoExternalRefs(t *testing.T) {
 
 	schemas := []retriever.RetrievedSchema{
 		{
-			Namespace: "test",
-			ID:        "schema1",
-			Schema:    schema,
-			SourceURI: "file:///test/schema1.json",
+			Namespace:     "test",
+			ID:            "schema1",
+			Schema:        schema,
+			SourceURI:     "file:///test/schema1.json",
+			SourceProfile: "json-schema",
 		},
 	}
 
@@ -88,6 +89,44 @@ func TestCrawlAndFetch_NoExternalRefs(t *testing.T) {
 
 	if len(fetcher.fetchCalls) != 0 {
 		t.Errorf("expected 0 fetches, got %d: %v", len(fetcher.fetchCalls), fetcher.fetchCalls)
+	}
+}
+
+func TestProcess_ResolvesInternalRefSiblingsBeforeUnsupportedCheck(t *testing.T) {
+	ctx := context.Background()
+	fetcher := newMockFetcher()
+
+	schema := json.RawMessage(`{
+		"$defs": {
+			"Base": { "type": "string" }
+		},
+		"$ref": "#/$defs/Base",
+		"properties": {
+			"ignoredBeforeRewrite": { "type": "string" }
+		}
+	}`)
+
+	schemas := []retriever.RetrievedSchema{
+		{
+			Namespace:     "test",
+			ID:            "refSibling",
+			Schema:        schema,
+			Adapter:       "@vectorfyco/valbridge-zod",
+			SourceURI:     "file:///test/refSibling.json",
+			SourceProfile: "json-schema",
+		},
+	}
+
+	result, err := Process(ctx, schemas, Options{Fetcher: fetcher})
+	if err != nil {
+		t.Fatalf("expected internal ref sibling schema to process successfully, got %v", err)
+	}
+
+	if len(result) != 1 {
+		t.Fatalf("expected one result, got %d", len(result))
+	}
+	if !contains(string(result[0].Schema), `"allOf"`) {
+		t.Fatalf("expected rewritten schema to contain allOf merge, got %s", string(result[0].Schema))
 	}
 }
 

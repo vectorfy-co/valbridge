@@ -52,6 +52,7 @@ export function extractSchema(schema: z.ZodType): ExtractedSchemaResult {
 	const jsonSchema = z.toJSONSchema(schema, {
 		unrepresentable: "any",
 	}) as JSONSchema;
+	ensureValbridgeExtension(jsonSchema).sourceProfile = "zod";
 
 	enrichJsonSchema(jsonSchema, schema);
 
@@ -158,19 +159,56 @@ function enrichJsonSchema(jsonSchema: JSONSchema, schema: z.ZodType): void {
 		}
 		case "pipe": {
 			const inputSchema = def.in as z.ZodType;
-			if (isEmptySchema(jsonSchema)) {
-				Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(inputSchema)));
+			const outputSchema = def.out as z.ZodType;
+			const inputDef = getDef(inputSchema);
+			const outputDef = getDef(outputSchema);
+
+			if (inputDef?.type === "transform") {
+				if (isEmptySchema(jsonSchema)) {
+					Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(outputSchema)));
+				}
+				enrichJsonSchema(jsonSchema, outputSchema);
+				appendCodeStub(jsonSchema, {
+					kind: "preprocess",
+					name: "preprocess",
+				});
+				return;
 			}
-			enrichJsonSchema(jsonSchema, inputSchema);
+
+			if (outputDef?.type === "transform") {
+				if (isEmptySchema(jsonSchema)) {
+					Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(inputSchema)));
+				}
+				enrichJsonSchema(jsonSchema, inputSchema);
+				appendCodeStub(jsonSchema, {
+					kind: "transform",
+					name: "transform",
+				});
+				return;
+			}
+
+			if (isEmptySchema(jsonSchema)) {
+				Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(outputSchema)));
+			}
+			enrichJsonSchema(jsonSchema, outputSchema);
 			appendCodeStub(jsonSchema, {
-				kind: "transform",
-				name: "transform",
+				kind: "codec",
+				name: "codec",
+				payload: {
+					inputType: inputDef?.type,
+					outputType: outputDef?.type,
+				},
+			});
+			appendRegistryMeta(jsonSchema, {
+				codecInputType: inputDef?.type,
+				codecOutputType: outputDef?.type,
 			});
 			return;
 		}
 		case "object": {
 			const extension = ensureValbridgeExtension(jsonSchema);
 			extension.version = "1.0";
+			extension.sourceProfile = "zod";
 			extension.extraMode = mapExtraMode(def.catchall);
 
 			const properties = jsonSchema.properties;
@@ -206,8 +244,17 @@ function enrichJsonSchema(jsonSchema: JSONSchema, schema: z.ZodType): void {
 			}
 			return;
 		}
+		case "boolean": {
+			if (def.coerce === true) {
+				ensureValbridgeExtension(jsonSchema).coercionMode = "coerce";
+			}
+			return;
+		}
 		case "string": {
 			const extension = ensureValbridgeExtension(jsonSchema);
+			if (def.coerce === true) {
+				extension.coercionMode = "coerce";
+			}
 			if (def.format === "uuid" && typeof def.version === "string") {
 				extension.formatDetail = {
 					kind: "uuid",
@@ -248,6 +295,7 @@ function ensureValbridgeExtension(schema: JSONSchema): Record<string, unknown> &
 	formatDetail?: { kind: string; version?: string };
 	codeStubs?: Array<Record<string, unknown>>;
 	transforms?: Array<Record<string, unknown>>;
+	registryMeta?: Record<string, unknown>;
 } {
 	const existing = schema["x-valbridge"];
 	if (existing && typeof existing === "object" && !Array.isArray(existing)) {
@@ -269,6 +317,18 @@ function appendCodeStub(
 		: [];
 	stubs.push(stub);
 	extension.codeStubs = stubs;
+}
+
+function appendRegistryMeta(
+	schema: JSONSchema,
+	meta: Record<string, unknown>,
+): void {
+	const extension = ensureValbridgeExtension(schema);
+	const existing = extension.registryMeta;
+	extension.registryMeta =
+		existing && typeof existing === "object" && !Array.isArray(existing)
+			? { ...existing, ...meta }
+			: { ...meta };
 }
 
 function appendTransform(

@@ -98,6 +98,7 @@ var refAdjacentAnnotationKeywords = map[string]bool{
 	"writeOnly":   true,
 	"nullable":    true,
 	"$anchor":     true,
+	"x-valbridge": true,
 }
 
 // hasPropertyApplicators checks if an object has any keyword that applies schemas to properties.

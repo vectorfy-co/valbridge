@@ -23,10 +23,20 @@ test("extractSchema preserves zod-only semantics in x-valbridge", () => {
 			id: z.uuidv4(),
 			preview: z.string().prefault("preview"),
 			slug: z.string().default("guest"),
+			label: z.coerce.string(),
 			chooser: z.coerce.number(),
+			enabled: z.coerce.boolean(),
 			pet: z.discriminatedUnion("kind", [Cat, Dog]),
 			name: z.string().trim().toLowerCase().describe("Display name"),
 			computed: z.string().transform((value) => value.trim()),
+			preprocessed: z.preprocess(
+				(value) => (typeof value === "string" ? value.trim() : value),
+				z.string().min(1),
+			),
+			decodedAt: z.codec(z.string(), z.date(), {
+				decode: (value) => new Date(value),
+				encode: (value) => value.toISOString(),
+			}),
 			checked: z.string().refine((value) => value.length > 1, "too short"),
 		})
 		.passthrough()
@@ -52,7 +62,9 @@ test("extractSchema preserves zod-only semantics in x-valbridge", () => {
 		kind: "default",
 		value: "guest",
 	});
+	expect(result.schema.properties.label["x-valbridge"].coercionMode).toBe("coerce");
 	expect(result.schema.properties.chooser["x-valbridge"].coercionMode).toBe("coerce");
+	expect(result.schema.properties.enabled["x-valbridge"].coercionMode).toBe("coerce");
 	expect(result.schema.properties.pet["x-valbridge"].discriminator).toBe("kind");
 	expect(result.schema.properties.name["x-valbridge"].transforms).toEqual([
 		{ kind: "trim" },
@@ -61,6 +73,20 @@ test("extractSchema preserves zod-only semantics in x-valbridge", () => {
 	expect(result.schema.properties.computed["x-valbridge"].codeStubs).toEqual([
 		{ kind: "transform", name: "transform" },
 	]);
+	expect(result.schema.properties.preprocessed["x-valbridge"].codeStubs).toEqual([
+		{ kind: "preprocess", name: "preprocess" },
+	]);
+	expect(result.schema.properties.decodedAt["x-valbridge"].codeStubs).toEqual([
+		{
+			kind: "codec",
+			name: "codec",
+			payload: { inputType: "string", outputType: "date" },
+		},
+	]);
+	expect(result.schema.properties.decodedAt["x-valbridge"].registryMeta).toEqual({
+		codecInputType: "string",
+		codecOutputType: "date",
+	});
 	expect(result.schema.properties.checked["x-valbridge"].codeStubs).toEqual([
 		{ kind: "validator", name: "custom" },
 	]);

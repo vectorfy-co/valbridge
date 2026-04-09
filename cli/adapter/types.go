@@ -2,6 +2,8 @@ package adapter
 
 import "encoding/json"
 
+type SourceProfile string
+
 // Diagnostic describes a lossy mapping, bridge requirement, or unsupported feature.
 type Diagnostic struct {
 	Severity   string `json:"severity"`
@@ -15,10 +17,11 @@ type Diagnostic struct {
 
 // ConvertInput is sent to the adapter CLI
 type ConvertInput struct {
-	Namespace string          `json:"namespace"`
-	ID        string          `json:"id"`
-	VarName   string          `json:"varName"`
-	Schema    json.RawMessage `json:"schema"`
+	Namespace     string          `json:"namespace"`
+	ID            string          `json:"id"`
+	VarName       string          `json:"varName"`
+	Schema        json.RawMessage `json:"schema"`
+	SourceProfile SourceProfile   `json:"sourceProfile,omitempty"`
 }
 
 // ConvertResult is received from the adapter CLI

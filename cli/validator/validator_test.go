@@ -99,6 +99,48 @@ func TestValidateSchema_ExternalRefIgnored(t *testing.T) {
 	}
 }
 
+func TestValidateSchemaWithOptions_ModeAdapterSkipsMetaschemaCompile(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	if err := ValidateSchema(schema); err == nil {
+		t.Fatal("expected transport validation to reject unsupported regex syntax")
+	}
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeAdapter})
+	if err != nil {
+		t.Fatalf("expected adapter mode to skip metaschema compilation, got %v", err)
+	}
+}
+
+func TestValidateSchemaWithOptions_ModeGenerationAcceptsUnsupportedRegexSyntax(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeGeneration})
+	if err != nil {
+		t.Fatalf("expected generation mode to tolerate unsupported regex syntax during metaschema validation, got %v", err)
+	}
+}
+
+func TestValidateSchemaWithOptions_ModeGenerationAcceptsUnsupportedPatternPropertiesSyntax(t *testing.T) {
+	schema := []byte(`{
+		"type": "object",
+		"patternProperties": {
+			"^(?!internal_).+$": { "type": "string" }
+		}
+	}`)
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeGeneration})
+	if err != nil {
+		t.Fatalf("expected generation mode to tolerate unsupported patternProperties syntax during metaschema validation, got %v", err)
+	}
+}
+
 func TestValidateSchemaWithOptions_CustomMetaschema(t *testing.T) {
 	// A simple custom metaschema that only allows type: "string" or "object"
 	customMetaschema := []byte(`{

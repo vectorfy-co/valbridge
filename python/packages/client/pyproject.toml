@@ -1,6 +1,6 @@
 [project]
 name = "valbridge"
-version = "1.0.2"
+version = "1.0.3"
 description = "Runtime client for valbridge-generated validators with type-safe schema lookup"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -8,12 +8,12 @@ license = { text = "MIT" }
 authors = [{ name = "vectorfyco" }]
 maintainers = [{ name = "vectorfyco" }]
 keywords = [
-    "json-schema",
     "validation",
     "pydantic",
     "code-generation",
     "runtime-client",
-    "schema",
+    "schema-conversion",
+    "zod",
     "type-safety",
 ]
 classifiers = [

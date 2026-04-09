@@ -224,6 +224,24 @@ func TestRefWithNullableIsAllowed(t *testing.T) {
 	}
 }
 
+func TestRefWithValbridgeMetadataIsAllowed(t *testing.T) {
+	schema := map[string]any{
+		"$defs": map[string]any{
+			"User": map[string]any{
+				"type": "object",
+			},
+		},
+		"$ref": "#/$defs/User",
+		"x-valbridge": map[string]any{
+			"sourceProfile": "pydantic",
+		},
+	}
+
+	if err := ValidateKeywords(schema); err != nil {
+		t.Fatalf("expected x-valbridge sibling on $ref to remain supported, got %v", err)
+	}
+}
+
 func TestContextAwareUnevaluatedItems(t *testing.T) {
 	tests := []struct {
 		name    string

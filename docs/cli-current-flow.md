@@ -10,7 +10,7 @@ The CLI has three main commands:
 
 | Command | Purpose |
 | --- | --- |
-| `generate` | Convert JSON Schemas into native validators (Zod, Pydantic) |
+| `generate` | Generate Zod validators or Pydantic models from valbridge configs |
 | `extract` | Extract a single schema as JSON for debugging |
 | `compliance` | Run the JSON Schema Test Suite against an adapter |
 

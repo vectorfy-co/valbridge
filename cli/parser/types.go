@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/vectorfy-co/valbridge/language"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 )
 
 // SourceType represents how to retrieve a schema
@@ -30,6 +31,7 @@ type SchemaEntryRaw struct {
 	SourceType   SourceType        `json:"sourceType"`        // "url", "file", "json", "pydantic", "zod"
 	Source       json.RawMessage   `json:"source"`            // string for url/file/pydantic/zod, object for json
 	Adapter      string            `json:"adapter"`           // full package name e.g., "zod"
+	SourceProfile string           `json:"sourceProfile,omitempty"`
 	Headers      map[string]string `json:"headers,omitempty"` // HTTP headers for URL sources (supports ${ENV_VAR} syntax)
 	ModuleRoot   string            `json:"moduleRoot,omitempty"`
 	PythonPath   []string          `json:"pythonPath,omitempty"`
@@ -53,6 +55,7 @@ type Declaration struct {
 	Namespace    string            // e.g., "user"
 	ID           string            // e.g., "TestUrl"
 	SourceType   SourceType        // "url", "file", "json", "pydantic", "zod"
+	SourceProfile sourceprofile.Profile
 	Source       json.RawMessage   // URL string, file path string, module target/path, or inline JSON object
 	Adapter      string            // full adapter package e.g., "zod"
 	ConfigPath   string            // path to config file (for relative file resolution)

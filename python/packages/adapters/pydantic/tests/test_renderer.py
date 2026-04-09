@@ -239,6 +239,27 @@ def test_render_number_integer():
     assert "from pydantic import StrictInt" in result.imports
 
 
+def test_render_number_with_coercion():
+    """Test rendering number with coercion enabled."""
+    node = NumberNode(integer=False, coercion_mode="coerce")
+    result = render(node, "Test")
+    assert result.type_expr == "float"
+    assert "from pydantic import StrictFloat" not in result.imports
+
+
+def test_render_integer_with_coercion_and_constraints():
+    """Test integer coercion keeps numeric constraints while dropping strict typing."""
+    node = NumberNode(
+        integer=True,
+        coercion_mode="coerce",
+        constraints=NumberConstraints(minimum=0),
+    )
+    result = render(node, "Test")
+    assert "Annotated[int, Ge(0)]" in result.type_expr
+    assert "from annotated_types import Ge" in result.imports
+    assert "from pydantic import StrictInt" not in result.imports
+
+
 def test_render_number_with_minimum():
     """Test number with minimum constraint.
 
@@ -304,6 +325,14 @@ def test_render_boolean():
     assert result.type_expr == "StrictBool"
     assert result.code == ""
     assert "from pydantic import StrictBool" in result.imports
+
+
+def test_render_boolean_with_coercion():
+    """Test boolean coercion uses plain bool instead of StrictBool."""
+    node = BooleanNode(coercion_mode="coerce")
+    result = render(node, "Test")
+    assert result.type_expr == "bool"
+    assert "from pydantic import StrictBool" not in result.imports
 
 
 def test_render_object_property_merges_alias_and_annotations():
