@@ -1,14 +1,16 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # Detect which paths changed
@@ -61,6 +63,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: cli/go.sum
 
       - name: Run tests
         run: go test ./... -v
@@ -80,6 +83,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v4
         with:
@@ -117,6 +122,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v4
         with:
@@ -181,6 +188,11 @@ jobs:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Install dependencies
         run: uv sync
@@ -211,10 +223,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: cli/go.sum
 
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v4
         with:
@@ -225,6 +240,11 @@ jobs:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Build local valbridge binary
         run: go build -o "${RUNNER_TEMP}/valbridge" .

@@ -7,14 +7,11 @@ on:
       - "*/packages/core/**"
       - "*/.ci/**"
       - "cli/compliance/**"
-  push:
-    branches: [main]
-    paths:
-      - "*/packages/adapters/**"
-      - "*/packages/core/**"
-      - "*/.ci/**"
-      - "cli/compliance/**"
   workflow_dispatch:
+
+concurrency:
+  group: compliance-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   detect-adapters:
@@ -120,11 +117,14 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache-dependency-path: cli/go.sum
 
       - uses: actions/setup-node@v4
         if: matrix.runtime == 'node'
         with:
           node-version: "22"
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v4
         if: matrix.runtime == 'node'
@@ -138,6 +138,11 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
         if: matrix.runtime == 'python'
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Setup ${{ matrix.lang }}
         run: source "${{ matrix.lang }}/.ci/setup.sh"
