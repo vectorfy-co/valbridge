@@ -1,6 +1,6 @@
 [project]
 name = "valbridge-pydantic-extractor"
-version = "1.0.3"
+version = "1.1.0"
 description = "Pydantic extraction utilities for valbridge's Zod conversion pipeline"
 requires-python = ">=3.10"
 readme = "README.md"
