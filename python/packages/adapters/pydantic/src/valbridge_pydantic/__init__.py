@@ -3,6 +3,6 @@
 from .converter import convert
 from .renderer import RenderResult, render
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 __all__ = ["convert", "render", "RenderResult"]
