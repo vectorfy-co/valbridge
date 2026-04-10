@@ -1,25 +1,18 @@
 # Changelog
 
-## [1.2.0](https://github.com/vectorfy-co/valbridge/compare/cli-v1.1.1...cli-v1.2.0) (2026-04-10)
+## [1.2.0](https://github.com/vectorfy-co/valbridge/compare/cli-v1.1.0...cli-v1.2.0) (2026-04-10)
+
+
+### Notes
+
+* `1.2.0` republishes the `1.1.0` CLI contents with corrected release metadata; there are no net-new package changes in this release.
+
+## [1.1.0](https://github.com/vectorfy-co/valbridge/compare/cli-v1.0.2...cli-v1.1.0) (2026-04-10)
 
 
 ### Features
 
-* add source-profile aware canonical IR support ([#21](https://github.com/vectorfy-co/valbridge/issues/21)) ([9e7b527](https://github.com/vectorfy-co/valbridge/commit/9e7b52780bb0e377aafc42caecdc7a19f0c50021))
-* import valbridge monorepo ([2a7ed24](https://github.com/vectorfy-co/valbridge/commit/2a7ed246c8cb87206d13860fe01155de24de1ae8))
-* publish installable valbridge cli ([#18](https://github.com/vectorfy-co/valbridge/issues/18)) ([b4ce0b4](https://github.com/vectorfy-co/valbridge/commit/b4ce0b4b2785324178b88753c2127e4306f38e70))
-
-
-### Bug Fixes
-
-* **ci:** align zod adapter checks with pnpm runtime ([#13](https://github.com/vectorfy-co/valbridge/issues/13)) ([8b0b537](https://github.com/vectorfy-co/valbridge/commit/8b0b53706a1adceae986c80e32778b3b4aa1c270))
-
-## [1.1.0](https://github.com/vectorfy-co/valbridge/compare/cli-v1.0.3...cli-v1.1.0) (2026-04-10)
-
-
-### Features
-
-* add source-profile aware canonical IR support ([#21](https://github.com/vectorfy-co/valbridge/issues/21)) ([9e7b527](https://github.com/vectorfy-co/valbridge/commit/9e7b52780bb0e377aafc42caecdc7a19f0c50021))
+* add source-profile-aware canonical IR support ([#21](https://github.com/vectorfy-co/valbridge/issues/21)) ([9e7b527](https://github.com/vectorfy-co/valbridge/commit/9e7b52780bb0e377aafc42caecdc7a19f0c50021))
 * import valbridge monorepo ([2a7ed24](https://github.com/vectorfy-co/valbridge/commit/2a7ed246c8cb87206d13860fe01155de24de1ae8))
 * publish installable valbridge cli ([#18](https://github.com/vectorfy-co/valbridge/issues/18)) ([b4ce0b4](https://github.com/vectorfy-co/valbridge/commit/b4ce0b4b2785324178b88753c2127e4306f38e70))
 

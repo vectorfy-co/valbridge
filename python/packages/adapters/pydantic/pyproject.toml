@@ -33,7 +33,7 @@ classifiers = [
 dependencies = [
     "email-validator>=2.0",
     "pydantic>=2.0",
-    "valbridge-core>=0.4.0,<0.5.0",
+    "valbridge-core>=1.1.0,<2.0.0",
 ]
 
 [project.urls]
