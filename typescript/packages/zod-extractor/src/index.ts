@@ -230,6 +230,19 @@ function enrichJsonSchema(jsonSchema: JSONSchema, schema: z.ZodType): void {
 			}
 			return;
 		}
+		case "array": {
+			const elementSchema = def.element as z.ZodType | undefined;
+			const items = jsonSchema.items;
+			if (
+				elementSchema &&
+				items &&
+				typeof items === "object" &&
+				!Array.isArray(items)
+			) {
+				enrichJsonSchema(items as JSONSchema, elementSchema);
+			}
+			return;
+		}
 		case "union": {
 			if (typeof def.discriminator === "string") {
 				ensureValbridgeExtension(jsonSchema).discriminator = def.discriminator;

@@ -1,9 +1,7 @@
 name: Release Please
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -49,7 +47,10 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_dispatch' || (github.event.inputs.manual_release_bundle == '' && github.event.inputs.manual_python_package == '' && github.event.inputs.manual_npm_package == '') }}
+    concurrency:
+      group: release-please-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     outputs:
       cli--release_created: ${{ steps.release.outputs['cli--release_created'] }}
       cli--tag_name: ${{ steps.release.outputs['cli--tag_name'] }}
@@ -66,7 +67,7 @@ jobs:
       py-pydantic-extractor--release_created: ${{ steps.release.outputs['python/packages/pydantic-extractor--release_created'] }}
       py-pydantic-bridge--release_created: ${{ steps.release.outputs['python/packages/pydantic-bridge--release_created'] }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v4.4.0
         id: release
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
@@ -113,11 +114,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6.4.0
         with:
           go-version: "1.24"
+          cache-dependency-path: cli/go.sum
 
       - name: Build release binary
         env:
@@ -155,14 +157,16 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5.0.0
         with:
           version: 10
 
@@ -211,14 +215,14 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5.0.0
         with:
           version: 10
 
@@ -265,13 +269,18 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v8.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Resolve package release
         id: release_target
@@ -332,13 +341,18 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v8.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Install dependencies
         run: uv sync
@@ -360,15 +374,20 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v8.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: |
+            python/uv.lock
+            python/**/pyproject.toml
 
       - name: Resolve package directory
         id: pkg
@@ -444,13 +463,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6.4.0
         with:
           go-version: "1.24"
+          cache-dependency-path: cli/go.sum
 
       - name: Resolve CLI tag
         id: cli_tag
@@ -494,7 +514,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
@@ -502,8 +522,10 @@ jobs:
         with:
           node-version: "24"
           registry-url: https://registry.npmjs.org
+          cache: pnpm
+          cache-dependency-path: typescript/pnpm-lock.yaml
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5.0.0
         with:
           version: 10
 
@@ -558,7 +580,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
@@ -567,7 +589,7 @@ jobs:
           node-version: "24"
           registry-url: https://registry.npmjs.org
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5.0.0
         with:
           version: 10
 
@@ -625,15 +647,15 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.manual_source_ref || github.ref_name }}
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6.2.0
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v8.0.0
 
       - name: Install dependencies
         run: uv sync
