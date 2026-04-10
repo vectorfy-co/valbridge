@@ -90,16 +90,35 @@ def test_render_string_with_pattern():
 
 
 def test_render_string_format_email():
-    """Test string with email format.
-
-    Format is treated as annotation-only per JSON Schema draft 2020-12.
-    Format values are preserved in the IR but don't affect validation.
-    """
+    """Test string with email format uses native Pydantic email validation."""
     node = StringNode(format="email")
     result = render(node, "Test")
-    # Format is annotation-only - renders as StrictStr
-    assert result.type_expr == "StrictStr"
-    assert "from pydantic import StrictStr" in result.imports
+    assert result.type_expr == "EmailStr"
+    assert "from pydantic import EmailStr" in result.imports
+
+
+@pytest.mark.parametrize(
+    ("transforms", "expected_bits"),
+    [
+        ((Transform(kind="trim"),), ("strip_whitespace=True",)),
+        ((Transform(kind="toLowerCase"),), ("to_lower=True",)),
+        (
+            (Transform(kind="trim"), Transform(kind="toLowerCase")),
+            ("strip_whitespace=True", "to_lower=True"),
+        ),
+    ],
+)
+def test_render_string_format_email_preserves_supported_normalization(
+    transforms, expected_bits
+):
+    node = StringNode(format="email", transforms=transforms)
+    result = render(node, "Test")
+    assert "Annotated[EmailStr, StringConstraints(" in result.type_expr
+    for bit in expected_bits:
+        assert bit in result.type_expr
+    assert "pattern=" not in result.type_expr
+    assert "from pydantic import EmailStr" in result.imports
+    assert "from pydantic import StringConstraints" in result.imports
 
 
 def test_render_string_format_uuid():
@@ -156,6 +175,23 @@ def test_render_string_with_enriched_transforms_uses_string_constraints():
         "Annotated[str, StringConstraints(strict=True, strip_whitespace=True, min_length=1)]"
         in result.type_expr
     )
+
+
+def test_render_email_format_prefers_native_email_over_unsupported_regex():
+    node = StringNode(
+        format="email",
+        constraints=StringConstraints(
+            pattern=r"^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$"
+        ),
+        transforms=(Transform(kind="trim"), Transform(kind="toLowerCase")),
+    )
+    result = render(node, "Test")
+    assert "EmailStr" in result.type_expr
+    assert "StringConstraints(" in result.type_expr
+    assert "strip_whitespace=True" in result.type_expr
+    assert "to_lower=True" in result.type_expr
+    assert "pattern=" not in result.type_expr
+    assert "from pydantic import EmailStr" in result.imports
 
 
 def test_render_string_with_annotations():
