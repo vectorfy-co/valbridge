@@ -178,10 +178,10 @@
     },
     {
       "keyword": "ref",
-      "passed": 40,
+      "passed": 43,
       "failed": 0,
       "skipped": 0,
-      "total": 40
+      "total": 43
     },
     {
       "keyword": "refRemote",
@@ -213,13 +213,13 @@
     }
   ],
   "summary": {
-    "passed": 606,
+    "passed": 609,
     "failed": 0,
     "skipped": 0,
-    "total": 606,
+    "total": 609,
     "percentage": 100,
     "unsupportedFeatures": {
-      "count": 7,
+      "count": 4,
       "items": [
         {
           "path": "draft4/definitions/validate definition against metaschema/invalid definition schema",
@@ -228,18 +228,6 @@
         {
           "path": "draft4/definitions/validate definition against metaschema/valid definition schema",
           "reason": "$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root)"
-        },
-        {
-          "path": "draft4/ref/ref overrides any sibling keywords/ref invalid",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
-        },
-        {
-          "path": "draft4/ref/ref overrides any sibling keywords/ref valid",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
-        },
-        {
-          "path": "draft4/ref/ref overrides any sibling keywords/ref valid, maxItems ignored",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
         },
         {
           "path": "draft4/ref/remote ref, containing refs itself/remote ref invalid",

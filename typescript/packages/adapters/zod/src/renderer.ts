@@ -8,6 +8,7 @@ import type {
 	SchemaNode,
 	StringNode,
 	NumberNode,
+	BooleanNode,
 	ObjectNode,
 	ArrayNode,
 	TupleNode,
