@@ -15,6 +15,7 @@ import (
 	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/parser"
 	"github.com/vectorfy-co/valbridge/retriever"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 )
 
 type Options struct {
@@ -148,14 +149,25 @@ func buildExtractedSchema(
 
 	return ExtractedSchema{
 		Schema: retriever.RetrievedSchema{
-			Namespace: decl.Namespace,
-			ID:        decl.ID,
-			Schema:    payload.Schema,
-			Adapter:   decl.Adapter,
-			SourceURI: sourceURI,
+			Namespace:     decl.Namespace,
+			ID:            decl.ID,
+			Schema:        payload.Schema,
+			Adapter:       decl.Adapter,
+			SourceURI:     sourceURI,
+			SourceProfile: normalizedSourceProfile(decl.SourceProfile, decl.SourceType),
 		},
 		Diagnostics: payload.Diagnostics,
 	}, nil
+}
+
+func normalizedSourceProfile(
+	profile sourceprofile.Profile,
+	sourceType parser.SourceType,
+) sourceprofile.Profile {
+	if profile == "" {
+		return sourceprofile.InferFromSourceType(string(sourceType))
+	}
+	return profile
 }
 
 func runExtractorCandidates(ctx context.Context, candidates []commandCandidate) (extractorPayload, error) {

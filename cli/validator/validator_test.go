@@ -99,6 +99,80 @@ func TestValidateSchema_ExternalRefIgnored(t *testing.T) {
 	}
 }
 
+func TestValidateSchemaWithOptions_ModeAdapterSkipsMetaschemaCompile(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	if err := ValidateSchema(schema); err == nil {
+		t.Fatal("expected transport validation to reject unsupported regex syntax")
+	}
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeAdapter})
+	if err != nil {
+		t.Fatalf("expected adapter mode to skip metaschema compilation, got %v", err)
+	}
+}
+
+func TestValidateSchemaWithOptions_ModeGenerationAcceptsUnsupportedRegexSyntax(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeGeneration})
+	if err != nil {
+		t.Fatalf("expected generation mode to tolerate unsupported regex syntax during metaschema validation, got %v", err)
+	}
+}
+
+func TestValidateSchemaWithOptions_ModeGenerationAcceptsUnsupportedPatternPropertiesSyntax(t *testing.T) {
+	schema := []byte(`{
+		"type": "object",
+		"patternProperties": {
+			"^(?!internal_).+$": { "type": "string" }
+		}
+	}`)
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{Mode: ModeGeneration})
+	if err != nil {
+		t.Fatalf("expected generation mode to tolerate unsupported patternProperties syntax during metaschema validation, got %v", err)
+	}
+}
+
+func TestValidateSchemaWithOptions_CacheSeparatesValidationModes(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	cache := NewCompiledCache()
+
+	if err := ValidateSchemaWithOptions(schema, &ValidateOptions{
+		Mode:  ModeGeneration,
+		Cache: cache,
+	}); err != nil {
+		t.Fatalf("expected generation mode to succeed, got %v", err)
+	}
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{
+		Mode:  ModeTransport,
+		Cache: cache,
+	})
+	if err == nil {
+		t.Fatal("expected transport mode to reject unsupported regex syntax instead of hitting generation cache")
+	}
+
+	stats := cache.Stats()
+	if stats.Hits != 0 {
+		t.Fatalf("expected no cache hits across validation modes, got %d", stats.Hits)
+	}
+	if stats.Misses != 2 {
+		t.Fatalf("expected one cache miss per validation mode, got %d", stats.Misses)
+	}
+}
+
 func TestValidateSchemaWithOptions_CustomMetaschema(t *testing.T) {
 	// A simple custom metaschema that only allows type: "string" or "object"
 	customMetaschema := []byte(`{

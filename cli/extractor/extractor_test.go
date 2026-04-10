@@ -12,6 +12,7 @@ import (
 
 	"github.com/vectorfy-co/valbridge/config"
 	"github.com/vectorfy-co/valbridge/parser"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 )
 
 func repoRoot(t *testing.T) string {
@@ -191,5 +192,17 @@ func TestBuildPydanticExtractorCandidatesPrefersPublishedByDefault(t *testing.T)
 	}
 	if !strings.HasPrefix(candidates[0].Label, "published-python-extractor-") {
 		t.Fatalf("expected published extractor first, got %q", candidates[0].Label)
+	}
+}
+
+func TestNormalizedSourceProfileFallsBackToSourceType(t *testing.T) {
+	if got := normalizedSourceProfile("", parser.SourceZod); got != sourceprofile.Zod {
+		t.Fatalf("expected zod fallback, got %q", got)
+	}
+	if got := normalizedSourceProfile("", parser.SourcePydantic); got != sourceprofile.Pydantic {
+		t.Fatalf("expected pydantic fallback, got %q", got)
+	}
+	if got := normalizedSourceProfile("", parser.SourceFile); got != sourceprofile.JSONSchema {
+		t.Fatalf("expected json-schema fallback, got %q", got)
 	}
 }

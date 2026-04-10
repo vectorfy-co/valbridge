@@ -1,7 +1,7 @@
 [project]
 name = "valbridge-cli"
-version = "1.0.2"
-description = "Installable CLI launcher for valbridge"
+version = "1.0.3"
+description = "Installable CLI for bidirectional Zod and Pydantic conversion"
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
@@ -10,8 +10,9 @@ maintainers = [{ name = "vectorfyco" }]
 keywords = [
     "valbridge",
     "cli",
-    "json-schema",
     "code-generation",
+    "zod",
+    "pydantic",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

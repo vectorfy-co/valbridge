@@ -1,6 +1,10 @@
 package adapter
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/vectorfy-co/valbridge/sourceprofile"
+)
 
 // Diagnostic describes a lossy mapping, bridge requirement, or unsupported feature.
 type Diagnostic struct {
@@ -15,10 +19,11 @@ type Diagnostic struct {
 
 // ConvertInput is sent to the adapter CLI
 type ConvertInput struct {
-	Namespace string          `json:"namespace"`
-	ID        string          `json:"id"`
-	VarName   string          `json:"varName"`
-	Schema    json.RawMessage `json:"schema"`
+	Namespace     string                `json:"namespace"`
+	ID            string                `json:"id"`
+	VarName       string                `json:"varName"`
+	Schema        json.RawMessage       `json:"schema"`
+	SourceProfile sourceprofile.Profile `json:"sourceProfile,omitempty"`
 }
 
 // ConvertResult is received from the adapter CLI
@@ -30,7 +35,7 @@ type ConvertResult struct {
 	Schema            string       `json:"schema,omitempty"`
 	Type              string       `json:"type,omitempty"`
 	Validate          string       `json:"validate,omitempty"`
-	ValidationImports []string `json:"validationImports,omitempty"`
+	ValidationImports []string     `json:"validationImports,omitempty"`
 	Diagnostics       []Diagnostic `json:"diagnostics,omitempty"`
 }
 

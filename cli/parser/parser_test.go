@@ -68,6 +68,42 @@ func TestParseConfigFile(t *testing.T) {
 	}
 }
 
+func TestParseConfigFileWithExplicitSourceProfile(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	configContent := `{
+		"$schema": "https://github.com/vectorfy-co/valbridge/schemas/typescript.jsonc",
+		"schemas": [
+			{
+				"id": "StoredPydanticSchema",
+				"sourceType": "file",
+				"source": "./stored.json",
+				"sourceProfile": "pydantic",
+				"adapter": "zod"
+			}
+		]
+	}`
+
+	configPath := filepath.Join(tmpDir, "user.jsonc")
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	config, err := parseConfigFile(configPath)
+	if err != nil {
+		t.Fatalf("parseConfigFile: %v", err)
+	}
+
+	declarations, err := mergeDeclarations([]ConfigFile{*config})
+	if err != nil {
+		t.Fatalf("mergeDeclarations: %v", err)
+	}
+
+	if got := declarations[0].SourceProfile; got != "pydantic" {
+		t.Fatalf("expected source profile pydantic, got %q", got)
+	}
+}
+
 func TestParseConfigFileWithValbridgeSuffixNamespace(t *testing.T) {
 	// Create a temp directory with a test config file
 	tmpDir := t.TempDir()

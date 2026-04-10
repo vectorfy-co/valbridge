@@ -143,10 +143,10 @@
     },
     {
       "keyword": "ref",
-      "passed": 22,
+      "passed": 25,
       "failed": 0,
       "skipped": 0,
-      "total": 22
+      "total": 25
     },
     {
       "keyword": "refRemote",
@@ -178,26 +178,14 @@
     }
   ],
   "summary": {
-    "passed": 429,
+    "passed": 432,
     "failed": 0,
     "skipped": 0,
-    "total": 429,
+    "total": 432,
     "percentage": 100,
     "unsupportedFeatures": {
-      "count": 5,
+      "count": 2,
       "items": [
-        {
-          "path": "draft3/ref/ref overrides any sibling keywords/ref invalid",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
-        },
-        {
-          "path": "draft3/ref/ref overrides any sibling keywords/remote ref valid",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
-        },
-        {
-          "path": "draft3/ref/ref overrides any sibling keywords/remote ref valid, maxItems ignored",
-          "reason": "$ref is not supported: adjacent validation keywords require scope-aware $ref evaluation; naive inlining is not semantically correct (at /properties/foo)"
-        },
         {
           "path": "draft3/ref/remote ref, containing refs itself/remote ref invalid",
           "reason": "$ref is not supported: metaschema validation ($ref to draft metaschema) cannot be compiled to static validator code (at root)"

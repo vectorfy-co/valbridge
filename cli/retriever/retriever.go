@@ -16,6 +16,7 @@ import (
 
 	"github.com/vectorfy-co/valbridge/fetcher"
 	"github.com/vectorfy-co/valbridge/parser"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 	"github.com/vectorfy-co/valbridge/ui"
 	"golang.org/x/sync/errgroup"
 )
@@ -49,11 +50,12 @@ func DefaultOptions() Options {
 
 // RetrievedSchema contains a fetched schema with its metadata
 type RetrievedSchema struct {
-	Namespace string
-	ID        string
-	Schema    json.RawMessage
-	Adapter   string
-	SourceURI string // base URI for resolving relative $refs (URL or file path)
+	Namespace     string
+	ID            string
+	Schema        json.RawMessage
+	Adapter       string
+	SourceURI     string // base URI for resolving relative $refs (URL or file path)
+	SourceProfile sourceprofile.Profile
 }
 
 // Key returns the full namespaced key like "namespace:id"
@@ -305,11 +307,12 @@ func Retrieve(ctx context.Context, decls []parser.Declaration, opts Options) ([]
 			if cached, ok := cache.Get(sourceURI); ok {
 				ui.Verbosef("cache hit: schema=%s, uri=%s", d.Key(), sourceURI)
 				results[idx] = RetrievedSchema{
-					Namespace: d.Namespace,
-					ID:        d.ID,
-					Schema:    cached,
-					Adapter:   d.Adapter,
-					SourceURI: sourceURI,
+					Namespace:     d.Namespace,
+					ID:            d.ID,
+					Schema:        cached,
+					Adapter:       d.Adapter,
+					SourceURI:     sourceURI,
+					SourceProfile: d.SourceProfile,
 				}
 				continue
 			}
@@ -355,11 +358,12 @@ func Retrieve(ctx context.Context, decls []parser.Declaration, opts Options) ([]
 			}
 
 			results[idx] = RetrievedSchema{
-				Namespace: d.Namespace,
-				ID:        d.ID,
-				Schema:    schema,
-				Adapter:   d.Adapter,
-				SourceURI: srcURI,
+				Namespace:     d.Namespace,
+				ID:            d.ID,
+				Schema:        schema,
+				Adapter:       d.Adapter,
+				SourceURI:     srcURI,
+				SourceProfile: d.SourceProfile,
 			}
 			return nil
 		})

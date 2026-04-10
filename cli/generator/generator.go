@@ -89,17 +89,29 @@ func Generate(ctx context.Context, input GenerateBatchInput) ([]adapter.ConvertR
 
 	// Build adapter input from already-bundled schemas
 	adapterInput := make([]adapter.ConvertInput, len(input.Schemas))
+	capabilityDiagnostics := make(map[string][]adapter.Diagnostic, len(input.Schemas))
 	for i, s := range input.Schemas {
+		diagnostics, err := adapter.AnalyzeSchemaCapabilities(input.AdapterRef, s.SourceProfile, s.Schema)
+		if err != nil {
+			return nil, fmt.Errorf(
+				"adapter ValidateSchemaCapabilities failed for schema %s: %w",
+				s.Key(),
+				err,
+			)
+		}
+		capabilityDiagnostics[s.Key()] = diagnostics
+
 		varName := s.Namespace + "_" + s.ID
 		if lang.BuildVarName != nil {
 			varName = lang.BuildVarName(s.Namespace, s.ID)
 		}
 
 		adapterInput[i] = adapter.ConvertInput{
-			Namespace: s.Namespace,
-			ID:        s.ID,
-			VarName:   varName,
-			Schema:    s.Schema, // already bundled and filtered by Processor
+			Namespace:     s.Namespace,
+			ID:            s.ID,
+			VarName:       varName,
+			Schema:        s.Schema, // already bundled and filtered by Processor
+			SourceProfile: s.SourceProfile,
 		}
 	}
 
@@ -141,6 +153,11 @@ func Generate(ctx context.Context, input GenerateBatchInput) ([]adapter.ConvertR
 	}
 	if err := validateOutputVarNamesMatchInputs(outputs, adapterInput, input.AdapterRef); err != nil {
 		return nil, err
+	}
+	for i := range outputs {
+		if diagnostics := capabilityDiagnostics[outputs[i].Key()]; len(diagnostics) > 0 {
+			outputs[i].Diagnostics = append(outputs[i].Diagnostics, diagnostics...)
+		}
 	}
 
 	ui.Verbosef("adapter execution successful: %s (outputs: %d)", input.AdapterRef, len(outputs))

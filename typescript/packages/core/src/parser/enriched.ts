@@ -18,6 +18,7 @@ import type { ParseContext } from "./context.js";
 
 const KNOWN_VALBRIDGE_KEYS = new Set<keyof ValbridgeExtension>([
 	"version",
+	"sourceProfile",
 	"coercionMode",
 	"transforms",
 	"formatDetail",

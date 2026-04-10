@@ -2,7 +2,7 @@
 
 # ![valbridge-pydantic](https://img.shields.io/static/v1?label=&message=valbridge-pydantic&color=E92063&style=for-the-badge&logo=pydantic&logoColor=white)
 
-Pydantic v2 adapter for valbridge -- converts JSON Schema into native Pydantic BaseModel classes with full type safety.
+Pydantic v2 adapter for valbridge -- generates native Pydantic BaseModel classes for valbridge's Zod/Pydantic conversion pipeline.
 
 <a href="https://pypi.org/project/valbridge-pydantic/"><img src="https://img.shields.io/pypi/v/valbridge-pydantic?style=flat&logo=pypi&logoColor=white" alt="PyPI" /></a>
 <a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>
@@ -23,7 +23,7 @@ Verified against `pydantic 2.12.5`.
 
 ## Usage
 
-This adapter is invoked by the valbridge CLI. Define schemas in a config file:
+This adapter is invoked by the valbridge CLI. It is typically used when converting from Zod or other valbridge-supported schema sources into Pydantic models:
 
 ```jsonc
 // user.valbridge.jsonc

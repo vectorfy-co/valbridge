@@ -10,11 +10,14 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/vectorfy-co/valbridge/adapter"
 	"github.com/vectorfy-co/valbridge/bundler"
 	"github.com/vectorfy-co/valbridge/fetcher"
 	"github.com/vectorfy-co/valbridge/metaschema"
+	"github.com/vectorfy-co/valbridge/normalizer"
 	"github.com/vectorfy-co/valbridge/refextractor"
 	"github.com/vectorfy-co/valbridge/retriever"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 	"github.com/vectorfy-co/valbridge/ui"
 	"github.com/vectorfy-co/valbridge/unsupported"
 	"github.com/vectorfy-co/valbridge/validator"
@@ -24,11 +27,14 @@ import (
 
 // ProcessedSchema contains a fully processed schema ready for code generation.
 type ProcessedSchema struct {
-	Namespace string          // namespace from config
-	ID        string          // schema ID from config
-	Schema    json.RawMessage // bundled schema (self-contained, filtered by vocabulary)
-	Adapter   string          // adapter package ref
-	SourceURI string          // original source URI
+	Namespace     string               // namespace from config
+	ID            string               // schema ID from config
+	Schema        json.RawMessage      // bundled schema (self-contained, filtered by vocabulary)
+	Adapter       string               // adapter package ref
+	SourceURI     string               // original source URI
+	SourceProfile sourceprofile.Profile
+	Diagnostics   []adapter.Diagnostic
+	Notes         []string
 }
 
 // Key returns the full namespaced key like "namespace:id"
@@ -78,6 +84,13 @@ func Process(ctx context.Context, schemas []retriever.RetrievedSchema, opts Opti
 	// Phase 0: Normalize legacy draft schemas to draft 2020-12
 	schemas = normalizeDeclared(schemas, opts.Draft, verbose)
 
+	// Phase 0.5: Normalize source-origin schemas into valbridge's generation-safe subset
+	normalizedSchemas, normalizationMeta, err := normalizeSourceSchemas(schemas, verbose)
+	if err != nil {
+		return nil, err
+	}
+	schemas = normalizedSchemas
+
 	// Phase 1: Validate declared schemas early (fail fast before fetching)
 	if err := validateDeclared(schemas, verbose); err != nil {
 		return nil, err
@@ -103,7 +116,7 @@ func Process(ctx context.Context, schemas []retriever.RetrievedSchema, opts Opti
 	verbose("processor: validation complete")
 
 	// Phase 4: Bundle all schemas using the cache
-	result, err := bundleAll(ctx, schemas, cache, verbose, opts.Draft)
+	result, err := bundleAll(ctx, schemas, cache, verbose, opts.Draft, normalizationMeta)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +164,9 @@ func validateDeclared(schemas []retriever.RetrievedSchema, verbose func(string))
 		if metaschema.HasCustomMetaschema(s.Schema) {
 			continue
 		}
-		if err := validator.ValidateSchema(s.Schema); err != nil {
+		if err := validator.ValidateSchemaWithOptions(s.Schema, &validator.ValidateOptions{
+			Mode: validator.ModeGeneration,
+		}); err != nil {
 			return fmt.Errorf("validation failed for %s: %w", s.SourceURI, err)
 		}
 	}
@@ -199,6 +214,7 @@ func validateExternal(schemas []retriever.RetrievedSchema, cache *fetcher.Shared
 
 	opts := &validator.ValidateOptions{
 		Metaschemas: metaschemas,
+		Mode:        validator.ModeGeneration,
 	}
 
 	// Validate declared schemas with custom metaschemas (skipped in early validation)
@@ -224,7 +240,19 @@ func validateExternal(schemas []retriever.RetrievedSchema, cache *fetcher.Shared
 
 // bundleAll bundles each declared schema using a cache fetcher.
 // No I/O occurs during bundling - all refs resolve from the pre-populated cache.
-func bundleAll(ctx context.Context, schemas []retriever.RetrievedSchema, cache *fetcher.SharedCache, verbose func(string), draft string) ([]ProcessedSchema, error) {
+type normalizationMetadata struct {
+	Diagnostics []adapter.Diagnostic
+	Notes       []string
+}
+
+func bundleAll(
+	ctx context.Context,
+	schemas []retriever.RetrievedSchema,
+	cache *fetcher.SharedCache,
+	verbose func(string),
+	draft string,
+	normalizationMeta map[string]normalizationMetadata,
+) ([]ProcessedSchema, error) {
 	// Add declared schemas to cache so bundler can resolve circular refs back to them
 	for _, s := range schemas {
 		if s.SourceURI != "" {
@@ -270,7 +298,12 @@ func bundleAll(ctx context.Context, schemas []retriever.RetrievedSchema, cache *
 			}
 		}
 
-		// Check for unsupported keywords (skip for boolean schemas which have no keywords)
+		bundled, err = resolveInternalRefs(bundled, draft)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve internal refs for %s: %w", s.SourceURI, err)
+		}
+
+		// Check for unsupported keywords after local ref normalization.
 		var parsed any
 		if err := json.Unmarshal(bundled, &parsed); err != nil {
 			return nil, fmt.Errorf("failed to parse bundled schema for %s: %w", s.SourceURI, err)
@@ -279,21 +312,49 @@ func bundleAll(ctx context.Context, schemas []retriever.RetrievedSchema, cache *
 			return nil, fmt.Errorf("schema %s contains unsupported keyword: %w", s.SourceURI, ukErr)
 		}
 
-		bundled, err = resolveInternalRefs(bundled, draft)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve internal refs for %s: %w", s.SourceURI, err)
-		}
-
+		meta := normalizationMeta[s.Key()]
 		result[i] = ProcessedSchema{
-			Namespace: s.Namespace,
-			ID:        s.ID,
-			Schema:    bundled,
-			Adapter:   s.Adapter,
-			SourceURI: s.SourceURI,
+			Namespace:     s.Namespace,
+			ID:            s.ID,
+			Schema:        bundled,
+			Adapter:       s.Adapter,
+			SourceURI:     s.SourceURI,
+			SourceProfile: s.SourceProfile,
+			Diagnostics:   meta.Diagnostics,
+			Notes:         meta.Notes,
 		}
 	}
 
 	return result, nil
+}
+
+func normalizeSourceSchemas(
+	schemas []retriever.RetrievedSchema,
+	verbose func(string),
+) ([]retriever.RetrievedSchema, map[string]normalizationMetadata, error) {
+	result := make([]retriever.RetrievedSchema, len(schemas))
+	meta := make(map[string]normalizationMetadata, len(schemas))
+
+	for i, schema := range schemas {
+		normalized, err := normalizer.Normalize(schema.Schema, schema.SourceProfile)
+		if err != nil {
+			return nil, nil, fmt.Errorf("normalization failed for %s: %w", schema.Key(), err)
+		}
+
+		schema.Schema = normalized.Schema
+		schema.SourceProfile = normalized.Profile
+		result[i] = schema
+		meta[schema.Key()] = normalizationMetadata{
+			Diagnostics: normalized.Diagnostics,
+			Notes:       normalized.Notes,
+		}
+
+		if len(normalized.Diagnostics) > 0 {
+			verbose(fmt.Sprintf("processor: normalized %s (%d diagnostics)", schema.Key(), len(normalized.Diagnostics)))
+		}
+	}
+
+	return result, meta, nil
 }
 
 // extractVocabulary extracts $vocabulary from a bundled schema.

@@ -520,6 +520,11 @@ def render_string(node: StringNode) -> RenderResult:
         if format_detail_result is not None:
             return format_detail_result
 
+    # Email formats get a native Pydantic type so Zod-exported regexes with
+    # lookarounds don't leak into generated models and fail at import time.
+    if node.format in {"email", "idn-email"}:
+        return _render_email_format(node)
+
     # Handle format first - format types override base str type
     if node.format is not None:
         format_result = _render_format(node.format, node.constraints)
@@ -544,32 +549,67 @@ def render_string(node: StringNode) -> RenderResult:
         imports.add("from typing import Annotated")
         imports.add("from pydantic import StringConstraints")
 
-        strict_value = "False" if node.coercion_mode == "coerce" else "True"
-        constraints: list[str] = [f"strict={strict_value}"]
-        if any(transform.kind == "trim" for transform in node.transforms):
-            constraints.append("strip_whitespace=True")
-        if any(transform.kind == "toLowerCase" for transform in node.transforms):
-            constraints.append("to_lower=True")
-        if any(transform.kind == "toUpperCase" for transform in node.transforms):
-            constraints.append("to_upper=True")
-        if node.constraints.min_length is not None:
-            constraints.append(f"min_length={node.constraints.min_length}")
-        if node.constraints.max_length is not None:
-            constraints.append(f"max_length={node.constraints.max_length}")
-        if node.constraints.pattern is not None:
-            # Escape the pattern for Python string
-            escaped_pattern = node.constraints.pattern.replace("\\", "\\\\").replace(
-                "'", "\\'"
-            )
-            constraints.append(f"pattern=r'{escaped_pattern}'")
-
-        constraint_str = ", ".join(constraints)
+        constraint_str = ", ".join(_collect_string_constraint_args(node))
         type_expr = f"Annotated[str, StringConstraints({constraint_str})]"
     else:
         imports.add("from pydantic import StrictStr")
         type_expr = "StrictStr"
 
     return RenderResult(code="", type_expr=type_expr, imports=imports)
+
+
+def _render_email_format(node: StringNode) -> RenderResult:
+    """Render email-like formats with native Pydantic validation.
+
+    JSON Schema format is annotation-only in general, but email is a special
+    case in this adapter because upstream exporters can attach backend-
+    incompatible regex patterns while also expressing a precise semantic type.
+    We preserve semantic validation with EmailStr and keep supported string
+    transforms/length constraints, while intentionally discarding raw patterns.
+    """
+    imports: set[str] = {"from pydantic import EmailStr"}
+    constraint_args = _collect_string_constraint_args(node, include_pattern=False)
+
+    if constraint_args == ["strict=True"]:
+        return RenderResult(code="", type_expr="EmailStr", imports=imports)
+
+    imports.add("from typing import Annotated")
+    imports.add("from pydantic import StringConstraints")
+    constraint_str = ", ".join(constraint_args)
+    return RenderResult(
+        code="",
+        type_expr=f"Annotated[EmailStr, StringConstraints({constraint_str})]",
+        imports=imports,
+    )
+
+
+def _collect_string_constraint_args(
+    node: StringNode, *, include_pattern: bool = True
+) -> list[str]:
+    strict_value = "False" if node.coercion_mode == "coerce" else "True"
+    constraints: list[str] = [f"strict={strict_value}"]
+
+    if any(transform.kind == "trim" for transform in node.transforms):
+        constraints.append("strip_whitespace=True")
+    if any(transform.kind == "toLowerCase" for transform in node.transforms):
+        constraints.append("to_lower=True")
+    if any(transform.kind == "toUpperCase" for transform in node.transforms):
+        constraints.append("to_upper=True")
+
+    if node.constraints is None:
+        return constraints
+
+    if node.constraints.min_length is not None:
+        constraints.append(f"min_length={node.constraints.min_length}")
+    if node.constraints.max_length is not None:
+        constraints.append(f"max_length={node.constraints.max_length}")
+    if include_pattern and node.constraints.pattern is not None:
+        escaped_pattern = node.constraints.pattern.replace("\\", "\\\\").replace(
+            "'", "\\'"
+        )
+        constraints.append(f"pattern=r'{escaped_pattern}'")
+
+    return constraints
 
 
 def _render_format_detail(format_detail) -> RenderResult | None:
@@ -751,16 +791,20 @@ def render_number(node: NumberNode) -> RenderResult:
     """
     imports: set[str] = set()
 
-    # Use strict types to prevent coercion
+    # Use strict types unless canonical metadata explicitly requests coercion.
     if node.integer:
-        imports.add("from pydantic import StrictInt")
-        base_type = "StrictInt"
+        if node.coercion_mode == "coerce":
+            base_type = "int"
+        else:
+            imports.add("from pydantic import StrictInt")
+            base_type = "StrictInt"
     else:
-        # JSON Schema 'number' accepts both integers and floats
-        # StrictFloat accepts integers too (converts to float), which is fine
-        # for validation purposes
-        imports.add("from pydantic import StrictFloat")
-        base_type = "StrictFloat"
+        # JSON Schema 'number' accepts both integers and floats.
+        if node.coercion_mode == "coerce":
+            base_type = "float"
+        else:
+            imports.add("from pydantic import StrictFloat")
+            base_type = "StrictFloat"
 
     has_constraints = node.constraints is not None and (
         node.constraints.minimum is not None
@@ -848,6 +892,8 @@ def render_boolean(node: BooleanNode) -> RenderResult:
     Uses StrictBool to ensure proper JSON Schema semantics where integers
     like 0 and 1 are NOT valid booleans.
     """
+    if node.coercion_mode == "coerce":
+        return RenderResult(code="", type_expr="bool", imports=set())
     return RenderResult(
         code="", type_expr="StrictBool", imports={"from pydantic import StrictBool"}
     )

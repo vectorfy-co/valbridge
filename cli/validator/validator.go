@@ -27,6 +27,15 @@ type CacheStats struct {
 	Compiles int
 }
 
+// ValidateMode controls how strict schema validation should be for a given phase.
+type ValidateMode string
+
+const (
+	ModeTransport  ValidateMode = "transport"
+	ModeGeneration ValidateMode = "generation"
+	ModeAdapter    ValidateMode = "adapter"
+)
+
 // NewCompiledCache creates a new compiled schema cache.
 func NewCompiledCache() *CompiledCache {
 	return &CompiledCache{
@@ -35,10 +44,11 @@ func NewCompiledCache() *CompiledCache {
 }
 
 // contentHash computes a SHA256 hash of the schema content combined with
-// draft hint and metaschema URIs for cache key uniqueness.
-func contentHash(data []byte, draftHint string, metaschemaURIs []string) string {
+// validation mode, draft hint, and metaschema URIs for cache key uniqueness.
+func contentHash(data []byte, mode ValidateMode, draftHint string, metaschemaURIs []string) string {
 	h := sha256.New()
 	h.Write(data)
+	h.Write([]byte(mode))
 	h.Write([]byte(draftHint))
 	for _, uri := range metaschemaURIs {
 		h.Write([]byte(uri))
@@ -98,6 +108,9 @@ type ValidateOptions struct {
 	// Cache is an optional compiled schema cache for reusing compiled schemas.
 	// When provided, schemas are cached by content hash and reused on subsequent validations.
 	Cache *CompiledCache
+
+	// Mode selects the validation phase.
+	Mode ValidateMode
 }
 
 // noopLoader returns an error for all URL loads.
@@ -199,6 +212,10 @@ func ValidateSchemaWithOptions(data []byte, opts *ValidateOptions, draftHint ...
 	if len(draftHint) > 0 {
 		hint = draftHint[0]
 	}
+	mode := ModeTransport
+	if opts != nil && opts.Mode != "" {
+		mode = opts.Mode
+	}
 
 	// Build cache key from content, draft hint, and metaschema URIs
 	var metaURIs []string
@@ -210,7 +227,7 @@ func ValidateSchemaWithOptions(data []byte, opts *ValidateOptions, draftHint ...
 		// Sort for deterministic hash
 		sortStrings(metaURIs)
 	}
-	cacheKey := contentHash(data, hint, metaURIs)
+	cacheKey := contentHash(data, mode, hint, metaURIs)
 
 	// Check cache
 	if opts != nil && opts.Cache != nil {
@@ -231,10 +248,23 @@ func ValidateSchemaWithOptions(data []byte, opts *ValidateOptions, draftHint ...
 		draft = detectDraft(data)
 	}
 
+	validationData := data
+	if mode == ModeGeneration {
+		sanitized, err := sanitizeRegexKeywordsForGenerationValidation(data)
+		if err != nil {
+			return fmt.Errorf("failed to sanitize regex keywords for generation validation: %w", err)
+		}
+		validationData = sanitized
+	}
+
 	// Parse JSON first using library's unmarshaler
-	doc, err := jsonschema.UnmarshalJSON(strings.NewReader(string(data)))
+	doc, err := jsonschema.UnmarshalJSON(strings.NewReader(string(validationData)))
 	if err != nil {
 		return fmt.Errorf("invalid JSON Schema: %w", err)
+	}
+
+	if mode == ModeAdapter {
+		return nil
 	}
 
 	// The jsonschema library validates against the meta-schema during compilation
@@ -293,6 +323,54 @@ func ValidateSchemaWithOptions(data []byte, opts *ValidateOptions, draftHint ...
 	}
 
 	return nil
+}
+
+func sanitizeRegexKeywordsForGenerationValidation(data []byte) ([]byte, error) {
+	var doc any
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil, err
+	}
+
+	patternIndex := 0
+	var sanitize func(node any) any
+	sanitize = func(node any) any {
+		switch typed := node.(type) {
+		case map[string]any:
+			sanitized := make(map[string]any, len(typed))
+			for key, value := range typed {
+				switch key {
+				case "pattern":
+					if _, ok := value.(string); ok {
+						sanitized[key] = ".*"
+						continue
+					}
+				case "patternProperties":
+					if props, ok := value.(map[string]any); ok {
+						safeProps := make(map[string]any, len(props))
+						for _, propValue := range props {
+							patternIndex++
+							safeKey := fmt.Sprintf("^VALBRIDGE_PATTERN_%d$", patternIndex)
+							safeProps[safeKey] = sanitize(propValue)
+						}
+						sanitized[key] = safeProps
+						continue
+					}
+				}
+				sanitized[key] = sanitize(value)
+			}
+			return sanitized
+		case []any:
+			sanitized := make([]any, len(typed))
+			for index, item := range typed {
+				sanitized[index] = sanitize(item)
+			}
+			return sanitized
+		default:
+			return node
+		}
+	}
+
+	return json.Marshal(sanitize(doc))
 }
 
 // sortStrings sorts a slice of strings in place

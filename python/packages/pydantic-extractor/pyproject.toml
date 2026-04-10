@@ -1,7 +1,7 @@
 [project]
 name = "valbridge-pydantic-extractor"
-version = "1.0.2"
-description = "Workspace-local Pydantic extraction utilities for valbridge"
+version = "1.0.3"
+description = "Pydantic extraction utilities for valbridge's Zod conversion pipeline"
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
@@ -11,10 +11,10 @@ keywords = [
     "valbridge",
     "pydantic",
     "extractor",
-    "json-schema",
     "code-generation",
     "validation",
     "introspection",
+    "zod",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -31,7 +31,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.12.0,<2.13.0",
-    "valbridge-core>=0.4.0,<0.5.0",
+    "valbridge-core>=1.0.3,<1.1.0",
 ]
 
 [project.urls]

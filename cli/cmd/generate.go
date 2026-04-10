@@ -40,7 +40,7 @@ var (
 
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "Parse config files, convert schemas, output native validators",
+	Short: "Generate Zod or Pydantic code from valbridge configs",
 	RunE:  runGenerate,
 }
 
@@ -221,6 +221,15 @@ func runGenerate(cmd *cobra.Command, args []string) error {
 
 	diagnosticGroups := make([]reporter.SchemaDiagnostics, 0, len(extractionDiagnostics)+len(outputs))
 	diagnosticGroups = append(diagnosticGroups, extractionDiagnostics...)
+	for _, processedSchema := range processed {
+		if len(processedSchema.Diagnostics) == 0 {
+			continue
+		}
+		diagnosticGroups = append(diagnosticGroups, reporter.SchemaDiagnostics{
+			Key:         processedSchema.Key(),
+			Diagnostics: processedSchema.Diagnostics,
+		})
+	}
 	for _, output := range outputs {
 		if len(output.Diagnostics) == 0 {
 			continue

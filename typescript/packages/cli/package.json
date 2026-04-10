@@ -1,8 +1,8 @@
 {
   "name": "@vectorfyco/valbridge-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "type": "module",
-  "description": "Installable CLI launcher for valbridge",
+  "description": "Installable CLI for bidirectional Zod and Pydantic conversion",
   "license": "MIT",
   "homepage": "https://github.com/vectorfy-co/valbridge",
   "repository": {
@@ -16,7 +16,6 @@
   "keywords": [
     "valbridge",
     "cli",
-    "json-schema",
     "code-generation",
     "zod",
     "pydantic"

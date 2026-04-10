@@ -1,7 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated, Generic, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, UUID4
-from pydantic import field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, Field, RootModel, StringConstraints, UUID4
+from pydantic import AliasChoices, AliasPath, field_serializer, field_validator, model_validator
 
 from valbridge_pydantic_extractor import extract_model
 
@@ -53,6 +53,30 @@ class Example(BaseModel):
         return value
 
 
+class AliasDriven(BaseModel):
+    observations: str = Field(
+        validation_alias=AliasChoices(
+            "observations",
+            "reasoning",
+            AliasPath("payload", "observations"),
+        ),
+        serialization_alias="observations",
+    )
+
+
+class ReviewEnvelope(RootModel[list[int]]):
+    @model_validator(mode="after")
+    def validate_payload(self):
+        return self
+
+
+T = TypeVar("T")
+
+
+class EvidenceBox(BaseModel, Generic[T]):
+    value: T
+
+
 def test_extract_model_preserves_enriched_pydantic_semantics():
     result = extract_model(Example)
 
@@ -97,3 +121,40 @@ def test_extract_model_preserves_enriched_pydantic_semantics():
 
     cat_def = result.schema["$defs"]["Cat"]
     assert cat_def["x-valbridge"]["extraMode"] == "forbid"
+
+
+def test_extract_model_preserves_alias_choices_and_alias_paths():
+    result = extract_model(AliasDriven)
+
+    observations = result.schema["properties"]["observations"]
+    assert observations["x-valbridge"]["aliasInfo"] == {
+        "validationAlias": "observations",
+        "serializationAlias": "observations",
+    }
+    assert observations["x-valbridge"]["registryMeta"]["validationAliasChoices"] == [
+        "observations",
+        "reasoning",
+        ["payload", "observations"],
+    ]
+
+
+def test_extract_model_surfaces_root_and_model_validator_metadata():
+    result = extract_model(ReviewEnvelope)
+
+    assert result.schema["x-valbridge"]["registryMeta"] == {"rootModel": True}
+    assert result.schema["x-valbridge"]["codeStubs"] == [
+        {
+            "kind": "modelValidator",
+            "name": "validate_payload",
+            "payload": {"mode": "after"},
+        }
+    ]
+
+
+def test_extract_model_surfaces_generic_specialization_metadata():
+    result = extract_model(EvidenceBox[int])
+
+    assert result.schema["x-valbridge"]["registryMeta"] == {
+        "genericOrigin": f"{EvidenceBox.__module__}.{EvidenceBox.__qualname__}",
+        "genericArgs": ["builtins.int"],
+    }

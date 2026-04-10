@@ -224,6 +224,55 @@ func TestRefWithNullableIsAllowed(t *testing.T) {
 	}
 }
 
+func TestRefWithValbridgeMetadataIsAllowed(t *testing.T) {
+	schema := map[string]any{
+		"$defs": map[string]any{
+			"User": map[string]any{
+				"type": "object",
+			},
+		},
+		"$ref": "#/$defs/User",
+		"x-valbridge": map[string]any{
+			"sourceProfile": "pydantic",
+		},
+	}
+
+	if err := ValidateKeywords(schema); err != nil {
+		t.Fatalf("expected x-valbridge sibling on $ref to remain supported, got %v", err)
+	}
+
+	nestedMetadataSchema := map[string]any{
+		"$defs": map[string]any{
+			"User": map[string]any{
+				"type": "object",
+			},
+		},
+		"$ref": "#/$defs/User",
+		"x-valbridge": map[string]any{
+			"sourceProfile": "pydantic",
+			"properties": map[string]any{
+				"shadow": map[string]any{"type": "object"},
+			},
+		},
+	}
+	if err := ValidateKeywords(nestedMetadataSchema); err != nil {
+		t.Fatalf("expected nested x-valbridge metadata to remain inert, got %v", err)
+	}
+
+	realSiblingSchema := map[string]any{
+		"$defs": map[string]any{
+			"User": map[string]any{
+				"type": "object",
+			},
+		},
+		"$ref": "#/$defs/User",
+		"type": "object",
+	}
+	if err := ValidateKeywords(realSiblingSchema); err == nil {
+		t.Fatal("expected real schema sibling on $ref to be rejected")
+	}
+}
+
 func TestContextAwareUnevaluatedItems(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -1,15 +1,15 @@
 {
-  "typescript/packages/adapters/zod": "1.0.2",
-  "typescript/packages/zod-extractor": "1.0.2",
-  "typescript/packages/zod-bridge": "1.0.2",
-  "typescript/packages/client": "1.0.2",
-  "typescript/packages/core": "1.0.2",
-  "python/packages/adapters/pydantic": "1.0.2",
-  "python/packages/pydantic-extractor": "1.0.2",
-  "python/packages/pydantic-bridge": "1.0.2",
-  "python/packages/client": "1.0.2",
-  "python/packages/core": "1.0.2",
-  "cli": "1.0.2",
-  "typescript/packages/cli": "1.0.2",
-  "python/packages/cli": "1.0.2"
+  "typescript/packages/adapters/zod": "1.0.3",
+  "typescript/packages/zod-extractor": "1.0.3",
+  "typescript/packages/zod-bridge": "1.0.3",
+  "typescript/packages/client": "1.0.3",
+  "typescript/packages/core": "1.0.3",
+  "python/packages/adapters/pydantic": "1.0.3",
+  "python/packages/pydantic-extractor": "1.0.3",
+  "python/packages/pydantic-bridge": "1.0.3",
+  "python/packages/client": "1.0.3",
+  "python/packages/core": "1.0.3",
+  "cli": "1.0.3",
+  "typescript/packages/cli": "1.0.3",
+  "python/packages/cli": "1.0.3"
 }

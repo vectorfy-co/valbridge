@@ -8,6 +8,7 @@ import type {
 	SchemaNode,
 	StringNode,
 	NumberNode,
+	BooleanNode,
 	ObjectNode,
 	ArrayNode,
 	TupleNode,
@@ -76,7 +77,7 @@ function renderNode(node: SchemaNode): string {
 			result = renderNumber(node);
 			break;
 		case "boolean":
-			result = "z.boolean()";
+			result = renderBoolean(node);
 			break;
 		case "null":
 			result = "z.null()";
@@ -315,7 +316,20 @@ function renderString(node: StringNode): string {
 
 function renderStringBase(node: StringNode): string {
 	const version = node.formatDetail?.data?.version;
+	const baseString = node.coercionMode === "coerce" ? "z.coerce.string()" : "z.string()";
 	if (node.formatDetail?.kind === "uuid") {
+		if (node.coercionMode === "coerce") {
+			switch (version) {
+				case "v4":
+					return "z.coerce.string().check(z.uuidv4())";
+				case "v6":
+					return "z.coerce.string().check(z.uuidv6())";
+				case "v7":
+					return "z.coerce.string().check(z.uuidv7())";
+				default:
+					return "z.coerce.string().uuid()";
+			}
+		}
 		switch (version) {
 			case "v4":
 				return "z.uuidv4()";
@@ -328,11 +342,12 @@ function renderStringBase(node: StringNode): string {
 		}
 	}
 
-	return "z.string()";
+	return baseString;
 }
 
 function renderNumber(node: NumberNode): string {
-	let result = node.integer ? "z.number().int()" : "z.number()";
+	const baseNumber = node.coercionMode === "coerce" ? "z.coerce.number()" : "z.number()";
+	let result = node.integer ? `${baseNumber}.int()` : baseNumber;
 	const {
 		minimum,
 		maximum,
@@ -364,6 +379,27 @@ function renderNumber(node: NumberNode): string {
 	}
 
 	return result;
+}
+
+function renderBoolean(node: BooleanNode): string {
+	if (node.coercionMode !== "coerce") {
+		return "z.boolean()";
+	}
+
+	return `z.preprocess((value) => {
+      if (typeof value === "boolean") return value;
+      if (typeof value === "number") {
+        if (value === 1) return true;
+        if (value === 0) return false;
+        return value;
+      }
+      if (typeof value === "string") {
+        const normalized = value.toLowerCase();
+        if (["1", "true", "t", "yes", "y", "on"].includes(normalized)) return true;
+        if (["0", "false", "f", "no", "n", "off"].includes(normalized)) return false;
+      }
+      return value;
+    }, z.boolean())`;
 }
 
 function renderObject(node: ObjectNode): string {

@@ -2,7 +2,7 @@
 
 # ![valbridge-pydantic-extractor](https://img.shields.io/static/v1?label=&message=valbridge-pydantic-extractor&color=E92063&style=for-the-badge&logo=pydantic&logoColor=white)
 
-Extract JSON Schema from existing Pydantic models, enriched with `x-valbridge` annotations for high-fidelity cross-language generation.
+Extract valbridge-compatible schema data from existing Pydantic models for high-fidelity Zod generation.
 
 <a href="https://pypi.org/project/valbridge-pydantic-extractor/"><img src="https://img.shields.io/pypi/v/valbridge-pydantic-extractor?style=flat&logo=pypi&logoColor=white" alt="PyPI" /></a>
 <a href="https://github.com/vectorfy-co/valbridge/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vectorfy-co/valbridge?style=flat" alt="License" /></a>

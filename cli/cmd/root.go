@@ -22,7 +22,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "valbridge",
-	Short: "JSON Schema to native validators",
+	Short: "Convert between Zod and Pydantic validators",
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
 		_ = args
 

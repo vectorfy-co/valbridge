@@ -1,11 +1,32 @@
 """Integration tests for valbridge-pydantic adapter."""
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
+
+UV_BIN = shutil.which("uv")
+SUBPROCESS_TIMEOUT_SECONDS = 30
+
+
+def run_adapter(test_input: list[dict[str, object]]) -> subprocess.CompletedProcess[str]:
+    if UV_BIN is None:
+        pytest.fail("uv executable not found in PATH")
+
+    return subprocess.run(
+        [UV_BIN, "run", "valbridge-pydantic"],
+        input=json.dumps(test_input),
+        capture_output=True,
+        text=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+        cwd=Path(__file__).parent.parent,
+    )
 
 
 def test_end_to_end_integration():
@@ -68,14 +89,7 @@ def test_end_to_end_integration():
     ]
 
     # Run adapter via stdin/stdout
-    input_json = json.dumps(test_input)
-    result = subprocess.run(
-        ["uv", "run", "valbridge-pydantic"],
-        input=input_json,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent.parent,
-    )
+    result = run_adapter(test_input)
 
     # Verify subprocess succeeded
     assert result.returncode == 0, f"Adapter failed: {result.stderr}"
@@ -259,14 +273,7 @@ def test_schema_with_advanced_features():
         },
     ]
 
-    input_json = json.dumps(test_input)
-    result = subprocess.run(
-        ["uv", "run", "valbridge-pydantic"],
-        input=input_json,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent.parent,
-    )
+    result = run_adapter(test_input)
 
     assert result.returncode == 0, f"Adapter failed: {result.stderr}"
 
@@ -333,3 +340,63 @@ def test_schema_with_advanced_features():
         assert date_range.end == "2024-12-31"
 
         del sys.modules["advanced_schemas"]
+
+
+def test_email_format_with_zod_regex_generates_importable_model():
+    test_input = [
+        {
+            "namespace": "test",
+            "id": "EmailHolder",
+            "varName": "test_email_holder",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "pattern": r"^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$",
+                        "x-valbridge": {
+                            "sourceProfile": "zod",
+                            "transforms": [
+                                {"kind": "trim"},
+                                {"kind": "toLowerCase"},
+                            ],
+                        },
+                    }
+                },
+                "required": ["email"],
+                "additionalProperties": False,
+            },
+        }
+    ]
+
+    result = run_adapter(test_input)
+
+    assert result.returncode == 0, f"Adapter failed: {result.stderr}"
+    output = json.loads(result.stdout)
+    assert len(output) == 1
+
+    generated = output[0]
+    assert "pattern=" not in generated["schema"]
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        module_path = Path(tmpdir) / "generated_email_schema.py"
+        module_path.write_text("\n".join([*generated["imports"], "", generated["schema"]]))
+
+        spec = spec_from_file_location("generated_email_schema", module_path)
+        assert spec is not None
+        assert spec.loader is not None
+
+        module = module_from_spec(spec)
+        sys.modules["generated_email_schema"] = module
+        spec.loader.exec_module(module)
+
+        TestEmailHolder = getattr(module, "TestEmailHolder")
+
+        valid = TestEmailHolder(email=" Test@Example.COM ")
+        assert valid.email == "test@example.com"
+
+        with pytest.raises(ValidationError):
+            TestEmailHolder(email="not-an-email")
+
+        del sys.modules["generated_email_schema"]

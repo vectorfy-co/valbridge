@@ -10,6 +10,7 @@ import (
 	"github.com/vectorfy-co/valbridge/adapter"
 	_ "github.com/vectorfy-co/valbridge/language/langs"
 	"github.com/vectorfy-co/valbridge/processor"
+	"github.com/vectorfy-co/valbridge/sourceprofile"
 )
 
 func TestConvertResultKey(t *testing.T) {
@@ -116,10 +117,11 @@ func TestGenerateAllEmptySchemas(t *testing.T) {
 
 func TestConvertInputJSON(t *testing.T) {
 	input := adapter.ConvertInput{
-		Namespace: "user",
-		ID:        "Test",
-		VarName:   "user_Test",
-		Schema:    json.RawMessage(`{"type": "string"}`),
+		Namespace:     "user",
+		ID:            "Test",
+		VarName:       "user_Test",
+		Schema:        json.RawMessage(`{"type": "string"}`),
+		SourceProfile: sourceprofile.Pydantic,
 	}
 
 	data, err := json.Marshal(input)
@@ -134,6 +136,128 @@ func TestConvertInputJSON(t *testing.T) {
 
 	if decoded.Namespace != "user" || decoded.ID != "Test" || decoded.VarName != "user_Test" {
 		t.Errorf("round-trip failed: %+v", decoded)
+	}
+	if decoded.SourceProfile != sourceprofile.Pydantic {
+		t.Fatalf("expected source profile to round-trip, got %q", decoded.SourceProfile)
+	}
+}
+
+func TestValidateAcceptsSupportedAdapterSourceProfilePair(t *testing.T) {
+	err := adapter.ValidateCapabilities("@vectorfyco/valbridge-zod", sourceprofile.Pydantic)
+	if err != nil {
+		t.Fatalf("expected zod adapter to accept canonical pydantic-origin schemas, got %v", err)
+	}
+}
+
+func TestValidateCapabilitiesRejectsMissingCapabilityMetadata(t *testing.T) {
+	err := adapter.ValidateCapabilities("@vectorfyco/unknown-adapter", sourceprofile.JSONSchema)
+	if err == nil {
+		t.Fatal("expected missing capability metadata error")
+	}
+	if !strings.Contains(err.Error(), "missing capability metadata") {
+		t.Fatalf("expected missing capability metadata error, got %v", err)
+	}
+}
+
+func TestValidateSchemaCapabilitiesAcceptsSupportedZodFeatures(t *testing.T) {
+	err := adapter.ValidateSchemaCapabilities(
+		"@vectorfyco/valbridge-zod",
+		sourceprofile.Pydantic,
+		json.RawMessage(`{
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string",
+					"x-valbridge": { "coercionMode": "coerce", "transforms": ["trim"] }
+				},
+				"count": {
+					"type": "number",
+					"x-valbridge": { "coercionMode": "coerce" }
+				},
+				"enabled": {
+					"type": "boolean",
+					"x-valbridge": { "coercionMode": "coerce" }
+				}
+			},
+			"x-valbridge": { "extraMode": "forbid" }
+		}`),
+	)
+	if err != nil {
+		t.Fatalf("expected capability validation to accept supported zod features, got %v", err)
+	}
+}
+
+func TestValidateSchemaCapabilitiesRejectsUnsupportedZodFeatures(t *testing.T) {
+	err := adapter.ValidateSchemaCapabilities(
+		"@vectorfyco/valbridge-zod",
+		sourceprofile.Pydantic,
+		json.RawMessage(`{
+			"type": "string",
+			"x-valbridge": {
+				"aliasInfo": { "validationAlias": "displayName" },
+				"codeStubs": [{ "kind": "preprocess", "name": "preprocess" }]
+			}
+		}`),
+	)
+	if err == nil {
+		t.Fatal("expected unsupported feature rejection")
+	}
+	if !strings.Contains(err.Error(), "alias.validation") || !strings.Contains(err.Error(), "codeStub.preprocess") {
+		t.Fatalf("expected unsupported features in error, got %v", err)
+	}
+}
+
+func TestAnalyzeSchemaCapabilitiesWarnsForCompatibleFeatures(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
+		"@vectorfyco/valbridge-zod",
+		sourceprofile.Pydantic,
+		json.RawMessage(`{
+			"anyOf": [{ "type": "string" }, { "type": "number" }],
+			"x-valbridge": { "resolution": "leftToRight" }
+		}`),
+	)
+	if err != nil {
+		t.Fatalf("expected compatible feature analysis to succeed, got %v", err)
+	}
+	if len(diagnostics) != 1 {
+		t.Fatalf("expected one warning diagnostic, got %#v", diagnostics)
+	}
+	if diagnostics[0].Severity != "warning" || !strings.Contains(diagnostics[0].Message, "union.resolution.leftToRight") {
+		t.Fatalf("expected compatible feature warning, got %#v", diagnostics[0])
+	}
+}
+
+func TestAnalyzeSchemaCapabilitiesRejectsMissingCapabilityMetadata(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
+		"@vectorfyco/unknown-adapter",
+		sourceprofile.JSONSchema,
+		json.RawMessage(`{"type":"string"}`),
+	)
+	if err == nil {
+		t.Fatal("expected missing capability metadata error")
+	}
+	if diagnostics != nil {
+		t.Fatalf("expected no diagnostics when capability metadata is missing, got %#v", diagnostics)
+	}
+	if !strings.Contains(err.Error(), "missing capability metadata") {
+		t.Fatalf("expected missing capability metadata error, got %v", err)
+	}
+}
+
+func TestAnalyzeSchemaCapabilitiesWarnsForCompatiblePydanticScalarCoercion(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
+		"vectorfyco/valbridge-pydantic",
+		sourceprofile.Zod,
+		json.RawMessage(`{
+			"type": "number",
+			"x-valbridge": { "coercionMode": "coerce" }
+		}`),
+	)
+	if err != nil {
+		t.Fatalf("expected non-exact scalar coercion analysis to succeed, got %v", err)
+	}
+	if len(diagnostics) != 1 || !strings.Contains(diagnostics[0].Message, "coercion.number") {
+		t.Fatalf("expected coercion.number warning, got %#v", diagnostics)
 	}
 }
 

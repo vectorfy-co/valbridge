@@ -98,6 +98,7 @@ var refAdjacentAnnotationKeywords = map[string]bool{
 	"writeOnly":   true,
 	"nullable":    true,
 	"$anchor":     true,
+	"x-valbridge": true,
 }
 
 // hasPropertyApplicators checks if an object has any keyword that applies schemas to properties.
@@ -390,6 +391,9 @@ func validateObject(obj map[string]any, path string, insideApplicator bool) *Uns
 	sort.Strings(sortedKeys)
 
 	for _, k := range sortedKeys {
+		if k == "x-valbridge" {
+			continue
+		}
 		// Set insideApplicator=true when entering applicator keyword children
 		childInsideApplicator := insideApplicator || applicatorKeywords[k]
 		if err := validateNode(obj[k], path+"/"+k, childInsideApplicator); err != nil {
