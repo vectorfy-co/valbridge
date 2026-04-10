@@ -154,15 +154,18 @@ func buildExtractedSchema(
 			Schema:        payload.Schema,
 			Adapter:       decl.Adapter,
 			SourceURI:     sourceURI,
-			SourceProfile: normalizedSourceProfile(decl.SourceProfile),
+			SourceProfile: normalizedSourceProfile(decl.SourceProfile, decl.SourceType),
 		},
 		Diagnostics: payload.Diagnostics,
 	}, nil
 }
 
-func normalizedSourceProfile(profile sourceprofile.Profile) sourceprofile.Profile {
+func normalizedSourceProfile(
+	profile sourceprofile.Profile,
+	sourceType parser.SourceType,
+) sourceprofile.Profile {
 	if profile == "" {
-		return sourceprofile.JSONSchema
+		return sourceprofile.InferFromSourceType(string(sourceType))
 	}
 	return profile
 }

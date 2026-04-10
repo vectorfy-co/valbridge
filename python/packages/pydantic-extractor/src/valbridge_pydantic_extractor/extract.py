@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Annotated, Any, get_args, get_origin
+from typing import Annotated, Any, Generic, get_args, get_origin
 
 from pydantic import BaseModel, RootModel
 from pydantic.aliases import AliasChoices, AliasPath
@@ -321,14 +321,40 @@ def _collect_model_registry_meta(model: type[BaseModel]) -> dict[str, Any]:
     if issubclass(model, RootModel):
         registry_meta["rootModel"] = True
 
+    origin = get_origin(model)
+    args = get_args(model)
+
+    if origin is None or not args:
+        origin = None
+        args = ()
+        for base in getattr(model, "__orig_bases__", ()):
+            candidate_origin = get_origin(base)
+            candidate_args = get_args(base)
+            if (
+                candidate_origin is not None
+                and candidate_origin is not Generic
+                and candidate_args
+            ):
+                origin = candidate_origin
+                args = candidate_args
+                break
+
+    if origin is not None:
+        registry_meta["genericOrigin"] = _type_label(origin)
+    if args:
+        registry_meta["genericArgs"] = [_type_label(arg) for arg in args]
+
+    if origin is not None or args:
+        return registry_meta
+
     generic_meta = getattr(model, "__pydantic_generic_metadata__", None)
     if isinstance(generic_meta, dict):
-        origin = generic_meta.get("origin")
-        args = generic_meta.get("args")
-        if origin is not None:
-            registry_meta["genericOrigin"] = _type_label(origin)
-        if isinstance(args, tuple) and args:
-            registry_meta["genericArgs"] = [_type_label(arg) for arg in args]
+        fallback_origin = generic_meta.get("origin")
+        fallback_args = generic_meta.get("args")
+        if fallback_origin is not None:
+            registry_meta["genericOrigin"] = _type_label(fallback_origin)
+        if isinstance(fallback_args, tuple) and fallback_args:
+            registry_meta["genericArgs"] = [_type_label(arg) for arg in fallback_args]
 
     return registry_meta
 

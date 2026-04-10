@@ -31,7 +31,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.12.0,<2.13.0",
-    "valbridge-core>=0.4.0,<0.5.0",
+    "valbridge-core>=1.0.3,<1.1.0",
 ]
 
 [project.urls]

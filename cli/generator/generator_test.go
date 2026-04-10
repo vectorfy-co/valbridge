@@ -121,7 +121,7 @@ func TestConvertInputJSON(t *testing.T) {
 		ID:            "Test",
 		VarName:       "user_Test",
 		Schema:        json.RawMessage(`{"type": "string"}`),
-		SourceProfile: adapter.SourceProfile(sourceprofile.Pydantic),
+		SourceProfile: sourceprofile.Pydantic,
 	}
 
 	data, err := json.Marshal(input)
@@ -137,12 +137,12 @@ func TestConvertInputJSON(t *testing.T) {
 	if decoded.Namespace != "user" || decoded.ID != "Test" || decoded.VarName != "user_Test" {
 		t.Errorf("round-trip failed: %+v", decoded)
 	}
-	if decoded.SourceProfile != adapter.SourceProfile(sourceprofile.Pydantic) {
+	if decoded.SourceProfile != sourceprofile.Pydantic {
 		t.Fatalf("expected source profile to round-trip, got %q", decoded.SourceProfile)
 	}
 }
 
-func TestGenerateRejectsUnsupportedAdapterSourceProfilePair(t *testing.T) {
+func TestValidateAcceptsSupportedAdapterSourceProfilePair(t *testing.T) {
 	err := adapter.ValidateCapabilities("@vectorfyco/valbridge-zod", sourceprofile.Pydantic)
 	if err != nil {
 		t.Fatalf("expected zod adapter to accept canonical pydantic-origin schemas, got %v", err)
@@ -197,8 +197,8 @@ func TestValidateSchemaCapabilitiesRejectsUnsupportedZodFeatures(t *testing.T) {
 	}
 }
 
-func TestValidateSchemaCapabilitiesRejectsCompatibleFeatures(t *testing.T) {
-	err := adapter.ValidateSchemaCapabilities(
+func TestAnalyzeSchemaCapabilitiesWarnsForCompatibleFeatures(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
 		"@vectorfyco/valbridge-zod",
 		sourceprofile.Pydantic,
 		json.RawMessage(`{
@@ -206,16 +206,19 @@ func TestValidateSchemaCapabilitiesRejectsCompatibleFeatures(t *testing.T) {
 			"x-valbridge": { "resolution": "leftToRight" }
 		}`),
 	)
-	if err == nil {
-		t.Fatal("expected compatible feature rejection")
+	if err != nil {
+		t.Fatalf("expected compatible feature analysis to succeed, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "union.resolution.leftToRight") {
-		t.Fatalf("expected compatible feature in error, got %v", err)
+	if len(diagnostics) != 1 {
+		t.Fatalf("expected one warning diagnostic, got %#v", diagnostics)
+	}
+	if diagnostics[0].Severity != "warning" || !strings.Contains(diagnostics[0].Message, "union.resolution.leftToRight") {
+		t.Fatalf("expected compatible feature warning, got %#v", diagnostics[0])
 	}
 }
 
-func TestValidateSchemaCapabilitiesRejectsNonExactPydanticScalarCoercion(t *testing.T) {
-	err := adapter.ValidateSchemaCapabilities(
+func TestAnalyzeSchemaCapabilitiesWarnsForCompatiblePydanticScalarCoercion(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
 		"vectorfyco/valbridge-pydantic",
 		sourceprofile.Zod,
 		json.RawMessage(`{
@@ -223,11 +226,11 @@ func TestValidateSchemaCapabilitiesRejectsNonExactPydanticScalarCoercion(t *test
 			"x-valbridge": { "coercionMode": "coerce" }
 		}`),
 	)
-	if err == nil {
-		t.Fatal("expected non-exact scalar coercion rejection")
+	if err != nil {
+		t.Fatalf("expected non-exact scalar coercion analysis to succeed, got %v", err)
 	}
-	if !strings.Contains(err.Error(), "coercion.number") {
-		t.Fatalf("expected coercion.number in error, got %v", err)
+	if len(diagnostics) != 1 || !strings.Contains(diagnostics[0].Message, "coercion.number") {
+		t.Fatalf("expected coercion.number warning, got %#v", diagnostics)
 	}
 }
 

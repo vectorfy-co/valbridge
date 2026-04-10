@@ -126,43 +126,68 @@ func ValidateCapabilities(adapterRef string, profile sourceprofile.Profile) erro
 }
 
 func ValidateSchemaCapabilities(adapterRef string, profile sourceprofile.Profile, rawSchema json.RawMessage) error {
+	_, err := AnalyzeSchemaCapabilities(adapterRef, profile, rawSchema)
+	return err
+}
+
+func AnalyzeSchemaCapabilities(
+	adapterRef string,
+	profile sourceprofile.Profile,
+	rawSchema json.RawMessage,
+) ([]Diagnostic, error) {
 	if err := ValidateCapabilities(adapterRef, profile); err != nil {
-		return err
+		return nil, err
 	}
 
 	caps, ok := LookupCapabilities(adapterRef)
 	if !ok || len(rawSchema) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	var decoded any
 	if err := json.Unmarshal(rawSchema, &decoded); err != nil {
-		return fmt.Errorf("invalid schema payload for capability analysis: %w", err)
+		return nil, fmt.Errorf("invalid schema payload for capability analysis: %w", err)
 	}
 
 	required := collectRequiredFeatures(decoded)
 	if len(required) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	nonExact := make([]string, 0)
+	unsupported := make([]string, 0)
+	warnings := make([]string, 0)
 	for _, feature := range required {
 		support, ok := caps.FeatureSupport[feature]
-		if !ok || support.Level != SupportExact {
-			nonExact = append(nonExact, feature)
+		switch {
+		case !ok || support.Level == SupportUnsupported:
+			unsupported = append(unsupported, feature)
+		case support.Level != SupportExact:
+			warnings = append(warnings, feature)
 		}
 	}
 
-	if len(nonExact) == 0 {
-		return nil
+	if len(unsupported) > 0 {
+		sort.Strings(unsupported)
+		return nil, fmt.Errorf(
+			"adapter %s cannot preserve schema features exactly: %v",
+			adapterRef,
+			unsupported,
+		)
 	}
 
-	sort.Strings(nonExact)
-	return fmt.Errorf(
-		"adapter %s cannot preserve schema features exactly: %v",
-		adapterRef,
-		nonExact,
-	)
+	if len(warnings) == 0 {
+		return nil, nil
+	}
+
+	sort.Strings(warnings)
+	return []Diagnostic{{
+		Severity:   "warning",
+		Code:       "adapter.capability.non_exact",
+		Message:    fmt.Sprintf("adapter %s will approximate schema features: %v", adapterRef, warnings),
+		Source:     string(profile),
+		Target:     adapterRef,
+		Suggestion: "Review the generated validator output before relying on these source-specific semantics.",
+	}}, nil
 }
 
 func collectRequiredFeatures(schema any) []string {

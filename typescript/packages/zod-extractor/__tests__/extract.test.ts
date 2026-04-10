@@ -149,6 +149,16 @@ test("main prints JSON extraction output", async () => {
 	}
 });
 
+test("plain pipes are not emitted as codecs", () => {
+	const result = extractSchema(z.string().pipe(z.coerce.number()));
+
+	expect(result.diagnostics).toEqual([]);
+	expect(result.schema["x-valbridge"]?.codeStubs).toEqual([
+		{ kind: "preprocess", name: "preprocess" },
+	]);
+	expect(result.schema["x-valbridge"]?.registryMeta).toBeUndefined();
+});
+
 test("ensureSupportedZodVersion rejects unsupported versions", () => {
 	const diagnostics = ensureSupportedZodVersion({
 		_zod: { version: { major: 5, minor: 0, patch: 0 } },

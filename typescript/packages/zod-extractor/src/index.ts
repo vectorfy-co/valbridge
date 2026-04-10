@@ -187,21 +187,30 @@ function enrichJsonSchema(jsonSchema: JSONSchema, schema: z.ZodType): void {
 				return;
 			}
 
+			const isCodec = Boolean(def.transform && def.reverseTransform);
+			const fallbackSchema = isCodec ? outputSchema : inputSchema;
 			if (isEmptySchema(jsonSchema)) {
-				Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(outputSchema)));
+				Object.assign(jsonSchema, stripSchemaKeyword(toInnerJsonSchema(fallbackSchema)));
 			}
-			enrichJsonSchema(jsonSchema, outputSchema);
+			enrichJsonSchema(jsonSchema, fallbackSchema);
+			if (isCodec) {
+				appendCodeStub(jsonSchema, {
+					kind: "codec",
+					name: "codec",
+					payload: {
+						inputType: inputDef?.type,
+						outputType: outputDef?.type,
+					},
+				});
+				appendRegistryMeta(jsonSchema, {
+					codecInputType: inputDef?.type,
+					codecOutputType: outputDef?.type,
+				});
+				return;
+			}
 			appendCodeStub(jsonSchema, {
-				kind: "codec",
-				name: "codec",
-				payload: {
-					inputType: inputDef?.type,
-					outputType: outputDef?.type,
-				},
-			});
-			appendRegistryMeta(jsonSchema, {
-				codecInputType: inputDef?.type,
-				codecOutputType: outputDef?.type,
+				kind: "preprocess",
+				name: "preprocess",
 			});
 			return;
 		}

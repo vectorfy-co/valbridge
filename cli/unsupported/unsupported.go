@@ -391,6 +391,9 @@ func validateObject(obj map[string]any, path string, insideApplicator bool) *Uns
 	sort.Strings(sortedKeys)
 
 	for _, k := range sortedKeys {
+		if k == "x-valbridge" {
+			continue
+		}
 		// Set insideApplicator=true when entering applicator keyword children
 		childInsideApplicator := insideApplicator || applicatorKeywords[k]
 		if err := validateNode(obj[k], path+"/"+k, childInsideApplicator); err != nil {

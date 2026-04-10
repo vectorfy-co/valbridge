@@ -9,12 +9,14 @@ import (
 func TestRootHelpBranding(t *testing.T) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	origOut := rootCmd.OutOrStdout()
+	origErr := rootCmd.ErrOrStderr()
 
 	rootCmd.SetOut(&stdout)
 	rootCmd.SetErr(&stderr)
 	t.Cleanup(func() {
-		rootCmd.SetOut(nil)
-		rootCmd.SetErr(nil)
+		rootCmd.SetOut(origOut)
+		rootCmd.SetErr(origErr)
 	})
 
 	if err := rootCmd.Help(); err != nil {

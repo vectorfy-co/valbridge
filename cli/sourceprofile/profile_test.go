@@ -10,6 +10,8 @@ func TestInferFromSourceType(t *testing.T) {
 		{sourceType: "pydantic", want: Pydantic},
 		{sourceType: "zod", want: Zod},
 		{sourceType: "file", want: JSONSchema},
+		{sourceType: "url", want: JSONSchema},
+		{sourceType: "json", want: JSONSchema},
 	}
 
 	for _, tt := range tests {

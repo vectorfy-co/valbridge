@@ -3,6 +3,8 @@ package normalizer
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/vectorfy-co/valbridge/adapter"
 	"github.com/vectorfy-co/valbridge/sourceprofile"
@@ -35,7 +37,7 @@ func Normalize(schema json.RawMessage, profile sourceprofile.Profile) (Result, e
 	diagnostics := make([]adapter.Diagnostic, 0, 1)
 	notes := make([]string, 0, 1)
 
-	normalizeNode(parsed, profile, true, &diagnostics, &notes)
+	normalizeNode(parsed, profile, "$", true, &diagnostics, &notes)
 
 	encoded, err := json.Marshal(parsed)
 	if err != nil {
@@ -53,6 +55,7 @@ func Normalize(schema json.RawMessage, profile sourceprofile.Profile) (Result, e
 func normalizeNode(
 	node any,
 	profile sourceprofile.Profile,
+	jsonPath string,
 	isRoot bool,
 	diagnostics *[]adapter.Diagnostic,
 	notes *[]string,
@@ -64,17 +67,46 @@ func normalizeNode(
 		}
 
 		if profile == sourceprofile.Pydantic {
-			rewritePydanticPattern(value, diagnostics, notes)
+			rewritePydanticPattern(value, jsonPath, diagnostics, notes)
 		}
 
-		for _, child := range value {
-			normalizeNode(child, profile, false, diagnostics, notes)
+		for key, child := range value {
+			normalizeNode(child, profile, jsonPathForObjectChild(jsonPath, key), false, diagnostics, notes)
 		}
 	case []any:
-		for _, child := range value {
-			normalizeNode(child, profile, false, diagnostics, notes)
+		for index, child := range value {
+			normalizeNode(child, profile, jsonPath+"["+strconv.Itoa(index)+"]", false, diagnostics, notes)
 		}
 	}
+}
+
+func jsonPathForObjectChild(parent string, key string) string {
+	if key == "" {
+		return parent
+	}
+	if isJSONPathIdentifier(key) {
+		return parent + "." + key
+	}
+	escaped := strings.ReplaceAll(key, "'", "\\'")
+	return parent + "['" + escaped + "']"
+}
+
+func isJSONPathIdentifier(key string) bool {
+	if key == "" {
+		return false
+	}
+	for i, r := range key {
+		if i == 0 {
+			if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && r != '_' {
+				return false
+			}
+			continue
+		}
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && r != '_' {
+			return false
+		}
+	}
+	return true
 }
 
 func ensureRootValbridge(node map[string]any, profile sourceprofile.Profile) {
@@ -91,6 +123,7 @@ func ensureRootValbridge(node map[string]any, profile sourceprofile.Profile) {
 
 func rewritePydanticPattern(
 	node map[string]any,
+	jsonPath string,
 	diagnostics *[]adapter.Diagnostic,
 	notes *[]string,
 ) {
@@ -103,12 +136,12 @@ func rewritePydanticPattern(
 	}
 
 	node["pattern"] = portableDecimalPattern
-	*notes = append(*notes, "rewrote portable decimal regex")
+	*notes = append(*notes, fmt.Sprintf("rewrote portable decimal regex at %s.pattern", jsonPath))
 	*diagnostics = append(*diagnostics, adapter.Diagnostic{
 		Severity: "info",
 		Code:     "normalizer.pydantic.decimal_pattern_rewritten",
 		Message:  "Rewrote a Pydantic-emitted decimal regex into a portable RE2-compatible form.",
-		Path:     "$.pattern",
+		Path:     jsonPath + ".pattern",
 		Source:   string(sourceprofile.Pydantic),
 		Target:   "canonical-json-schema",
 	})
