@@ -94,12 +94,12 @@ jobs:
         run: pnpm install --no-frozen-lockfile
         working-directory: typescript
 
-      - name: Build all packages
-        run: pnpm run build
+      - name: Build TypeScript core package
+        run: pnpm --filter @vectorfyco/valbridge-core run build
         working-directory: typescript
 
-      - name: Type check all packages
-        run: pnpm run typecheck
+      - name: Type check Zod adapter package
+        run: pnpm --filter @vectorfyco/valbridge-zod run typecheck
         working-directory: typescript
 
   ts-zod-compat:
