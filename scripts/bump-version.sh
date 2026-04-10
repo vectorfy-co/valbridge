@@ -100,7 +100,26 @@ done
 # ── Apply to Python packages ─────────────────────────────────────────────────
 
 for pkg in "${PY_PACKAGES[@]}"; do
-  sed -i '' 's/^version = ".*"/version = "'"${NEXT}"'"/' "${REPO_ROOT}/${pkg}"
+  python3 -c "
+from pathlib import Path
+
+p = Path('${REPO_ROOT}/${pkg}')
+lines = p.read_text().splitlines()
+updated = []
+replaced = False
+
+for line in lines:
+    if not replaced and line.startswith('version = \"'):
+        updated.append('version = \"${NEXT}\"')
+        replaced = True
+    else:
+        updated.append(line)
+
+if not replaced:
+    raise SystemExit(f'No version field found in {p}')
+
+p.write_text('\n'.join(updated) + '\n')
+"
   echo "  ${pkg} -> ${NEXT}"
 done
 

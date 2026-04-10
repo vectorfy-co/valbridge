@@ -141,6 +141,38 @@ func TestValidateSchemaWithOptions_ModeGenerationAcceptsUnsupportedPatternProper
 	}
 }
 
+func TestValidateSchemaWithOptions_CacheSeparatesValidationModes(t *testing.T) {
+	schema := []byte(`{
+		"type": "string",
+		"pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+	}`)
+
+	cache := NewCompiledCache()
+
+	if err := ValidateSchemaWithOptions(schema, &ValidateOptions{
+		Mode:  ModeGeneration,
+		Cache: cache,
+	}); err != nil {
+		t.Fatalf("expected generation mode to succeed, got %v", err)
+	}
+
+	err := ValidateSchemaWithOptions(schema, &ValidateOptions{
+		Mode:  ModeTransport,
+		Cache: cache,
+	})
+	if err == nil {
+		t.Fatal("expected transport mode to reject unsupported regex syntax instead of hitting generation cache")
+	}
+
+	stats := cache.Stats()
+	if stats.Hits != 0 {
+		t.Fatalf("expected no cache hits across validation modes, got %d", stats.Hits)
+	}
+	if stats.Misses != 2 {
+		t.Fatalf("expected one cache miss per validation mode, got %d", stats.Misses)
+	}
+}
+
 func TestValidateSchemaWithOptions_CustomMetaschema(t *testing.T) {
 	// A simple custom metaschema that only allows type: "string" or "object"
 	customMetaschema := []byte(`{

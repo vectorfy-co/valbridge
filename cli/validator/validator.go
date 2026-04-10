@@ -44,10 +44,11 @@ func NewCompiledCache() *CompiledCache {
 }
 
 // contentHash computes a SHA256 hash of the schema content combined with
-// draft hint and metaschema URIs for cache key uniqueness.
-func contentHash(data []byte, draftHint string, metaschemaURIs []string) string {
+// validation mode, draft hint, and metaschema URIs for cache key uniqueness.
+func contentHash(data []byte, mode ValidateMode, draftHint string, metaschemaURIs []string) string {
 	h := sha256.New()
 	h.Write(data)
+	h.Write([]byte(mode))
 	h.Write([]byte(draftHint))
 	for _, uri := range metaschemaURIs {
 		h.Write([]byte(uri))
@@ -226,7 +227,7 @@ func ValidateSchemaWithOptions(data []byte, opts *ValidateOptions, draftHint ...
 		// Sort for deterministic hash
 		sortStrings(metaURIs)
 	}
-	cacheKey := contentHash(data, hint, metaURIs)
+	cacheKey := contentHash(data, mode, hint, metaURIs)
 
 	// Check cache
 	if opts != nil && opts.Cache != nil {
