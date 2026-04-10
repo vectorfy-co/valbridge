@@ -119,6 +119,30 @@ test("extractFromModule loads a local module export", async () => {
 	}
 });
 
+test("extractSchema preserves transforms inside array item properties", () => {
+	const normalizedEmailSchema = z.email().trim().toLowerCase();
+	const schema = z
+		.object({
+			members: z
+				.array(
+					z.object({
+						email: normalizedEmailSchema,
+					}),
+				)
+				.default([]),
+		})
+		.strict();
+
+	const result = extractSchema(schema);
+	const email =
+		result.schema.properties.members.items.properties.email;
+
+	expect(email["x-valbridge"].transforms).toEqual([
+		{ kind: "trim" },
+		{ kind: "toLowerCase" },
+	]);
+});
+
 test("main prints JSON extraction output", async () => {
 	const dir = mkdtempSync(join(process.cwd(), ".tmp-zod-extractor-cli-"));
 	try {

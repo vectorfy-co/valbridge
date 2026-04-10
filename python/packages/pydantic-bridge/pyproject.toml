@@ -1,6 +1,6 @@
 [project]
 name = "valbridge-pydantic-bridge"
-version = "1.1.0"
+version = "1.1.1"
 description = "Workspace-local Pydantic bridge helpers for valbridge"
 requires-python = ">=3.10"
 readme = "README.md"
