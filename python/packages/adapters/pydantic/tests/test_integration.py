@@ -1,11 +1,32 @@
 """Integration tests for valbridge-pydantic adapter."""
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+
+import pytest
+from pydantic import ValidationError
+
+UV_BIN = shutil.which("uv")
+SUBPROCESS_TIMEOUT_SECONDS = 30
+
+
+def run_adapter(test_input: list[dict[str, object]]) -> subprocess.CompletedProcess[str]:
+    if UV_BIN is None:
+        pytest.fail("uv executable not found in PATH")
+
+    return subprocess.run(
+        [UV_BIN, "run", "valbridge-pydantic"],
+        input=json.dumps(test_input),
+        capture_output=True,
+        text=True,
+        timeout=SUBPROCESS_TIMEOUT_SECONDS,
+        cwd=Path(__file__).parent.parent,
+    )
 
 
 def test_end_to_end_integration():
@@ -68,14 +89,7 @@ def test_end_to_end_integration():
     ]
 
     # Run adapter via stdin/stdout
-    input_json = json.dumps(test_input)
-    result = subprocess.run(
-        ["uv", "run", "valbridge-pydantic"],
-        input=input_json,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent.parent,
-    )
+    result = run_adapter(test_input)
 
     # Verify subprocess succeeded
     assert result.returncode == 0, f"Adapter failed: {result.stderr}"
@@ -259,14 +273,7 @@ def test_schema_with_advanced_features():
         },
     ]
 
-    input_json = json.dumps(test_input)
-    result = subprocess.run(
-        ["uv", "run", "valbridge-pydantic"],
-        input=input_json,
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent.parent,
-    )
+    result = run_adapter(test_input)
 
     assert result.returncode == 0, f"Adapter failed: {result.stderr}"
 
@@ -363,13 +370,7 @@ def test_email_format_with_zod_regex_generates_importable_model():
         }
     ]
 
-    result = subprocess.run(
-        ["uv", "run", "valbridge-pydantic"],
-        input=json.dumps(test_input),
-        capture_output=True,
-        text=True,
-        cwd=Path(__file__).parent.parent,
-    )
+    result = run_adapter(test_input)
 
     assert result.returncode == 0, f"Adapter failed: {result.stderr}"
     output = json.loads(result.stdout)
@@ -395,10 +396,7 @@ def test_email_format_with_zod_regex_generates_importable_model():
         valid = TestEmailHolder(email=" Test@Example.COM ")
         assert valid.email == "test@example.com"
 
-        try:
+        with pytest.raises(ValidationError):
             TestEmailHolder(email="not-an-email")
-            assert False, "Should have rejected invalid email"
-        except Exception:
-            pass
 
         del sys.modules["generated_email_schema"]

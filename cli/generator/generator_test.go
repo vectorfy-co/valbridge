@@ -149,6 +149,16 @@ func TestValidateAcceptsSupportedAdapterSourceProfilePair(t *testing.T) {
 	}
 }
 
+func TestValidateCapabilitiesRejectsMissingCapabilityMetadata(t *testing.T) {
+	err := adapter.ValidateCapabilities("@vectorfyco/unknown-adapter", sourceprofile.JSONSchema)
+	if err == nil {
+		t.Fatal("expected missing capability metadata error")
+	}
+	if !strings.Contains(err.Error(), "missing capability metadata") {
+		t.Fatalf("expected missing capability metadata error, got %v", err)
+	}
+}
+
 func TestValidateSchemaCapabilitiesAcceptsSupportedZodFeatures(t *testing.T) {
 	err := adapter.ValidateSchemaCapabilities(
 		"@vectorfyco/valbridge-zod",
@@ -214,6 +224,23 @@ func TestAnalyzeSchemaCapabilitiesWarnsForCompatibleFeatures(t *testing.T) {
 	}
 	if diagnostics[0].Severity != "warning" || !strings.Contains(diagnostics[0].Message, "union.resolution.leftToRight") {
 		t.Fatalf("expected compatible feature warning, got %#v", diagnostics[0])
+	}
+}
+
+func TestAnalyzeSchemaCapabilitiesRejectsMissingCapabilityMetadata(t *testing.T) {
+	diagnostics, err := adapter.AnalyzeSchemaCapabilities(
+		"@vectorfyco/unknown-adapter",
+		sourceprofile.JSONSchema,
+		json.RawMessage(`{"type":"string"}`),
+	)
+	if err == nil {
+		t.Fatal("expected missing capability metadata error")
+	}
+	if diagnostics != nil {
+		t.Fatalf("expected no diagnostics when capability metadata is missing, got %#v", diagnostics)
+	}
+	if !strings.Contains(err.Error(), "missing capability metadata") {
+		t.Fatalf("expected missing capability metadata error, got %v", err)
 	}
 }
 

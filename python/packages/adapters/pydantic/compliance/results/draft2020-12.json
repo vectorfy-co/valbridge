@@ -115,10 +115,26 @@
     },
     {
       "keyword": "format",
-      "passed": 133,
-      "failed": 0,
+      "passed": 131,
+      "failed": 2,
       "skipped": 0,
-      "total": 133
+      "total": 133,
+      "failures": [
+        {
+          "group": "email format",
+          "test": "invalid email string is only an annotation by default",
+          "expected": true,
+          "actual": "false",
+          "passed": false
+        },
+        {
+          "group": "idn-email format",
+          "test": "invalid idn-email string is only an annotation by default",
+          "expected": true,
+          "actual": "false",
+          "passed": false
+        }
+      ]
     },
     {
       "keyword": "if-then-else",
@@ -341,11 +357,11 @@
     }
   ],
   "summary": {
-    "passed": 1061,
-    "failed": 2,
+    "passed": 1059,
+    "failed": 4,
     "skipped": 0,
     "total": 1063,
-    "percentage": 99.81185324553151,
+    "percentage": 99.62370649106302,
     "unsupportedFeatures": {
       "count": 208,
       "items": [

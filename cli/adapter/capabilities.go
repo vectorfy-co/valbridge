@@ -114,7 +114,7 @@ func LookupCapabilities(adapterRef string) (Capabilities, bool) {
 func ValidateCapabilities(adapterRef string, profile sourceprofile.Profile) error {
 	caps, ok := LookupCapabilities(adapterRef)
 	if !ok {
-		return nil
+		return fmt.Errorf("adapter %s missing capability metadata", adapterRef)
 	}
 	if !caps.SupportsCanonicalIR {
 		return fmt.Errorf("adapter %s does not support canonical valbridge IR", adapterRef)
@@ -139,8 +139,8 @@ func AnalyzeSchemaCapabilities(
 		return nil, err
 	}
 
-	caps, ok := LookupCapabilities(adapterRef)
-	if !ok || len(rawSchema) == 0 {
+	caps, _ := LookupCapabilities(adapterRef)
+	if len(rawSchema) == 0 {
 		return nil, nil
 	}
 

@@ -71,12 +71,79 @@ func normalizeNode(
 		}
 
 		for key, child := range value {
-			normalizeNode(child, profile, jsonPathForObjectChild(jsonPath, key), false, diagnostics, notes)
+			childPath := jsonPathForObjectChild(jsonPath, key)
+			switch {
+			case isSchemaMapKeyword(key):
+				normalizeSchemaMapChildren(child, profile, childPath, diagnostics, notes)
+			case isSchemaKeyword(key):
+				normalizeNode(child, profile, childPath, false, diagnostics, notes)
+			}
 		}
 	case []any:
 		for index, child := range value {
 			normalizeNode(child, profile, jsonPath+"["+strconv.Itoa(index)+"]", false, diagnostics, notes)
 		}
+	}
+}
+
+func normalizeSchemaMapChildren(
+	node any,
+	profile sourceprofile.Profile,
+	jsonPath string,
+	diagnostics *[]adapter.Diagnostic,
+	notes *[]string,
+) {
+	value, ok := node.(map[string]any)
+	if !ok {
+		return
+	}
+
+	for key, child := range value {
+		normalizeNode(
+			child,
+			profile,
+			jsonPathForObjectChild(jsonPath, key),
+			false,
+			diagnostics,
+			notes,
+		)
+	}
+}
+
+func isSchemaKeyword(key string) bool {
+	switch key {
+	case "items",
+		"additionalProperties",
+		"propertyNames",
+		"additionalItems",
+		"contains",
+		"not",
+		"if",
+		"then",
+		"else",
+		"unevaluatedItems",
+		"unevaluatedProperties",
+		"allOf",
+		"anyOf",
+		"oneOf",
+		"prefixItems":
+		return true
+	default:
+		return false
+	}
+}
+
+func isSchemaMapKeyword(key string) bool {
+	switch key {
+	case "$defs",
+		"definitions",
+		"properties",
+		"patternProperties",
+		"dependentSchemas",
+		"dependencies":
+		return true
+	default:
+		return false
 	}
 }
 

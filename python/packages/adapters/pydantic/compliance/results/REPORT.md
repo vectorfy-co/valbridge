@@ -5,7 +5,7 @@
 | Draft | Passed | Failed | Skipped | Unsupported | Coverage |
 | ----- | ------ | ------ | ------- | ----------- | -------- |
 | draft2019-09 | 1047 | 2 | 0 | 185 | 99.8% |
-| draft2020-12 | 1061 | 2 | 0 | 208 | 99.8% |
+| draft2020-12 | 1059 | 4 | 0 | 208 | 99.6% |
 | draft3 | 431 | 1 | 0 | 2 | 99.8% |
 | draft4 | 608 | 1 | 0 | 4 | 99.8% |
 | draft6 | 826 | 2 | 0 | 4 | 99.8% |
@@ -14,7 +14,7 @@
 ## Badges
 
 ![draft2019-09](https://img.shields.io/badge/draft2019-09%20compliance-99.8%25-brightgreen)
-![draft2020-12](https://img.shields.io/badge/draft2020-12%20compliance-99.8%25-brightgreen)
+![draft2020-12](https://img.shields.io/badge/draft2020-12%20compliance-99.6%25-brightgreen)
 ![draft3](https://img.shields.io/badge/draft3%20compliance-99.8%25-brightgreen)
 ![draft4](https://img.shields.io/badge/draft4%20compliance-99.8%25-brightgreen)
 ![draft6](https://img.shields.io/badge/draft6%20compliance-99.8%25-brightgreen)
@@ -384,7 +384,7 @@ These tests are intentionally excluded due to documented limitations.
 | enum | ✅ | 45/45 |
 | exclusiveMaximum | ✅ | 4/4 |
 | exclusiveMinimum | ✅ | 4/4 |
-| format | ✅ | 133/133 |
+| format | ⚠️ | 131/133 |
 | if-then-else | ✅ | 26/26 |
 | infinite-loop-detection | ✅ | 2/2 |
 | items | ✅ | 29/29 |
@@ -766,6 +766,18 @@ These tests are intentionally excluded due to documented limitations.
 </details>
 
 ### Unexpected Failures
+
+<details>
+<summary>format - 2 failures</summary>
+
+- **email format**
+  - Test: invalid email string is only an annotation by default
+  - Expected: `valid`, Got: `false`
+- **idn-email format**
+  - Test: invalid idn-email string is only an annotation by default
+  - Expected: `valid`, Got: `false`
+
+</details>
 
 <details>
 <summary>ref - 2 failures</summary>
