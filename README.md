@@ -159,7 +159,10 @@ Run the CLI directly without installing anything globally:
 
 ```bash
 # npm/npx
-npx -y @vectorfyco/valbridge-cli generate
+npx -y @vectorfyco/valbridge-cli@latest generate
+
+# pnpm
+pnpm dlx @vectorfyco/valbridge-cli@latest generate
 
 # Python/uvx
 uvx valbridge-cli generate
@@ -173,16 +176,16 @@ Install once and use the `valbridge` command everywhere:
 
 ```bash
 # npm
-npm install -g @vectorfyco/valbridge-cli
+npm install -g @vectorfyco/valbridge-cli@latest
 
 # pnpm
-pnpm add -g @vectorfyco/valbridge-cli
+pnpm add -g @vectorfyco/valbridge-cli@latest
 
 # pip
-pip install valbridge-cli
+pip install -U valbridge-cli
 
 # uv (recommended for Python)
-uv tool install valbridge-cli
+uv tool install --upgrade valbridge-cli
 ```
 
 After installing, run:
