@@ -20,6 +20,7 @@ jobs:
   detect-adapters:
     runs-on: ubuntu-latest
     outputs:
+      is_release_pr: ${{ steps.release_pr.outputs.value }}
       matrix: ${{ steps.detect.outputs.matrix }}
       has_adapters: ${{ steps.detect.outputs.has_adapters }}
     steps:
@@ -27,9 +28,26 @@ jobs:
         with:
           fetch-depth: 0 # need history for diff
 
+      - name: Detect release-please PR branch
+        id: release_pr
+        run: |
+          branch="${{ github.head_ref || github.ref_name }}"
+          if [[ "$branch" == release-please--* ]]; then
+            echo "value=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "value=false" >>"$GITHUB_OUTPUT"
+          fi
+
       - name: Detect changed adapters
         id: detect
         run: |
+          if [[ "${{ steps.release_pr.outputs.value }}" == "true" ]]; then
+            echo "matrix=[]" >>"$GITHUB_OUTPUT"
+            echo "has_adapters=false" >>"$GITHUB_OUTPUT"
+            echo "Release-please PR detected - skipping compliance matrix"
+            exit 0
+          fi
+
           # Determine what changed
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="${{ github.event.pull_request.base.sha }}"

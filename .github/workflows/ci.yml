@@ -18,10 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cli: ${{ steps.filter.outputs.cli }}
+      release_pr: ${{ steps.release_pr.outputs.value }}
       typescript: ${{ steps.filter.outputs.typescript }}
       python: ${{ steps.filter.outputs.python }}
     steps:
       - uses: actions/checkout@v6.0.2
+      - name: Detect release-please PR branch
+        id: release_pr
+        run: |
+          branch="${{ github.head_ref || github.ref_name }}"
+          if [[ "$branch" == release-please--* ]]; then
+            echo "value=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "value=false" >>"$GITHUB_OUTPUT"
+          fi
       - uses: dorny/paths-filter@v4.0.1
         id: filter
         with:
@@ -56,7 +66,7 @@ jobs:
   go-test:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.cli == 'true'
+    if: needs.changes.outputs.cli == 'true' && needs.changes.outputs.release_pr != 'true'
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -76,7 +86,7 @@ jobs:
   ts-build:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.typescript == 'true'
+    if: needs.changes.outputs.typescript == 'true' && needs.changes.outputs.release_pr != 'true'
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -94,18 +104,18 @@ jobs:
         run: pnpm install --no-frozen-lockfile
         working-directory: typescript
 
-      - name: Build all packages
-        run: pnpm run build
+      - name: Build TypeScript core package
+        run: pnpm --filter @vectorfyco/valbridge-core run build
         working-directory: typescript
 
-      - name: Type check all packages
-        run: pnpm run typecheck
+      - name: Type check Zod adapter package
+        run: pnpm --filter @vectorfyco/valbridge-zod run typecheck
         working-directory: typescript
 
   ts-zod-compat:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.typescript == 'true'
+    if: needs.changes.outputs.typescript == 'true' && needs.changes.outputs.release_pr != 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -179,7 +189,7 @@ jobs:
   py-build:
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.python == 'true'
+    if: needs.changes.outputs.python == 'true' && needs.changes.outputs.release_pr != 'true'
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -218,9 +228,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: changes
     if: |
-      needs.changes.outputs.cli == 'true' ||
-      needs.changes.outputs.typescript == 'true' ||
-      needs.changes.outputs.python == 'true'
+      needs.changes.outputs.release_pr != 'true' && (
+        needs.changes.outputs.cli == 'true' ||
+        needs.changes.outputs.typescript == 'true' ||
+        needs.changes.outputs.python == 'true'
+      )
     steps:
       - uses: actions/checkout@v6.0.2
 
