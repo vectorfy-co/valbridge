@@ -1,0 +1,14 @@
+steps:
+  - label: ":pipeline: Generate & upload"
+    command: |
+      set -euo pipefail
+      command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+      UV_BIN="$$(command -v uv || true)"
+      if [ -z "$$UV_BIN" ]; then
+        UV_BIN="$$HOME/.local/bin/uv"
+      fi
+      "$$UV_BIN" run --with buildkite-sdk \
+        python .buildkite/generate_pipeline.py \
+        | buildkite-agent pipeline upload
+    agents:
+      queue: "mac-mini-m4"
