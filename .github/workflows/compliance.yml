@@ -157,7 +157,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - uses: astral-sh/setup-uv@v8.0.0
+      - uses: astral-sh/setup-uv@v8.1.0
         if: matrix.runtime == 'python'
 
       - name: Setup ${{ matrix.lang }}
