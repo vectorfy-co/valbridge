@@ -38,6 +38,6 @@
     "test": "pnpm exec vitest run"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0"
+    "@types/node": "^25.6.0"
   }
 }
