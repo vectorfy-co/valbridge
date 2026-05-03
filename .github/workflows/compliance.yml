@@ -140,7 +140,7 @@ jobs:
           go-version: "1.24"
           cache-dependency-path: cli/go.sum
 
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@v6.0.5
         if: matrix.runtime == 'node'
         with:
           version: 10
