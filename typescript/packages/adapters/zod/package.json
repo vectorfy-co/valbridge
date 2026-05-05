@@ -45,7 +45,7 @@
     "@vectorfyco/valbridge-core": "workspace:*"
   },
   "devDependencies": {
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "peerDependencies": {
     "zod": "^4.0.0"
