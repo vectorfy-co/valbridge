@@ -35,7 +35,7 @@ while [ "$attempt" -le "$max_attempts" ]; do
     exit 1
   fi
 
-  state="$(python - <<'PY'
+  state="$(python3 - <<'PY'
 import json
 from pathlib import Path
 
