@@ -66,6 +66,22 @@ _AGENTS = {"queue": AGENT_QUEUE}
 MIXED_MODE = bool(RELEASE_COMPONENTS)
 
 
+def _escape_buildkite_shell_variables(value: object) -> object:
+    """Escapes shell dollar variables for Buildkite dynamic pipeline upload."""
+    if isinstance(value, str):
+        return value.replace("$", "$$")
+    if isinstance(value, list):
+        return [_escape_buildkite_shell_variables(item) for item in value]
+    return value
+
+
+def command_step(*args: object, **kwargs: object) -> CommandStep:
+    """Creates a CommandStep with command strings safe for Buildkite upload."""
+    if "command" in kwargs:
+        kwargs["command"] = _escape_buildkite_shell_variables(kwargs["command"])
+    return CommandStep(*args, **kwargs)
+
+
 def _normalize_path(path: str) -> str:
     path = (path or ".").strip()
     if path in {"", "."}:
@@ -298,7 +314,7 @@ def lint_step(entry: dict[str, object]) -> CommandStep | None:
     if run_mypy and mypy_targets:
         commands.append(_run_in_workdir(str(entry.get("workdir", ".")), _uv(f"mypy {' '.join(mypy_targets)}", pkg, workspace_mode)))
 
-    return CommandStep(
+    return command_step(
         label=label,
         agents=_AGENTS,
         command=commands,
@@ -324,7 +340,7 @@ def test_step(entry: dict[str, object]) -> CommandStep | None:
     xml_name = (pkg or suffix or "pytest").replace("/", "-").replace(" ", "-")
     xml = f"{_RESULTS}/{xml_name}.xml"
 
-    step = CommandStep(
+    step = command_step(
         label=label,
         agents=_AGENTS,
         command=[
@@ -361,7 +377,7 @@ def python_verify_step() -> CommandStep | GroupStep:
             steps.append(test)
 
     if not steps:
-        return CommandStep(
+        return command_step(
             label=":grey_question: No inferred Python checks",
             agents=_AGENTS,
             command="echo 'No Python verification steps were inferred from repository metadata; skipping.'",
@@ -413,7 +429,7 @@ else
   fi
 fi
 """
-    return CommandStep(
+    return command_step(
         label=f":test_tube: Verify PNPM workspace{label_suffix}",
         agents=_AGENTS,
         env={"TEST_FRAMEWORK": str(workspace.get("test_framework", TEST_FRAMEWORK))},
@@ -422,7 +438,7 @@ fi
 
 
 def detect_changes_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":mag: Detect changes",
         key="detect_changes",
         agents=_AGENTS,
@@ -438,7 +454,7 @@ def detect_changes_step() -> CommandStep:
 
 
 def release_prepare_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":bookmark_tabs: Prepare release version",
         key="prepare_release",
         agents=_AGENTS,
@@ -459,7 +475,7 @@ def docker_step(service_name: str, dockerfile: str, image_suffix: str) -> Comman
     image = IMAGE_REPO + (f"-{image_suffix}" if image_suffix else "")
     label = f":docker: Build + Push GHCR{(' — ' + service_name) if service_name else ''}"
 
-    return CommandStep(
+    return command_step(
         label=label,
         agents=_AGENTS,
         secrets=["GHCR_USERNAME", "GHCR_TOKEN"],
@@ -532,7 +548,7 @@ fi
 docker buildx build \
   --platform """ + IMAGE_PLATFORMS + """ \
   --file "$DOCKERFILE_PATH" \
-  "$${TAGS[@]}" \
+  "${TAGS[@]}" \
   --label "org.opencontainers.image.source=https://github.com/""" + GITHUB_OWNER + "/" + GITHUB_REPO + """" \
   --label "org.opencontainers.image.revision=$BUILDKITE_COMMIT" \
   --label "org.opencontainers.image.version=$VERSION_LABEL" \
@@ -544,7 +560,7 @@ docker buildx build \
 
 
 def legacy_pypi_publish_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":package: Publish to PyPI",
         agents=_AGENTS,
         secrets=[PYPI_SECRET_KEY],
@@ -580,7 +596,7 @@ uv publish --token "$UV_PUBLISH_TOKEN" dist/* || "$HOME/.local/bin/uv" publish -
 
 
 def mixed_pypi_publish_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":package: Publish Python packages",
         agents=_AGENTS,
         secrets=[PYPI_SECRET_KEY],
@@ -636,7 +652,7 @@ done
 
 
 def legacy_npm_publish_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":package: Publish to npm",
         agents=_AGENTS,
         secrets=[NPM_SECRET_KEY],
@@ -681,7 +697,7 @@ fi
 
 
 def mixed_npm_publish_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":package: Publish TypeScript packages",
         agents=_AGENTS,
         secrets=[NPM_SECRET_KEY],
@@ -740,7 +756,7 @@ done
 
 
 def github_release_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":github: Create GitHub release",
         agents=_AGENTS,
         secrets=[GH_RELEASE_SECRET],
@@ -756,7 +772,7 @@ def github_release_step() -> CommandStep:
 
 
 def codeql_bridge_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":shield: Wait for GitHub CodeQL",
         agents=_AGENTS,
         secrets=[GH_RELEASE_SECRET],
@@ -770,7 +786,7 @@ def codeql_bridge_step() -> CommandStep:
 
 
 def deploy_step() -> CommandStep:
-    return CommandStep(
+    return command_step(
         label=":rocket: Deploy via SSH",
         agents=_AGENTS,
         command="bash scripts/ci/deploy_ssh.sh",
