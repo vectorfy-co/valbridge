@@ -532,7 +532,7 @@ fi
 docker buildx build \
   --platform """ + IMAGE_PLATFORMS + """ \
   --file "$DOCKERFILE_PATH" \
-  "${TAGS[@]}" \
+  "$${TAGS[@]}" \
   --label "org.opencontainers.image.source=https://github.com/""" + GITHUB_OWNER + "/" + GITHUB_REPO + """" \
   --label "org.opencontainers.image.revision=$BUILDKITE_COMMIT" \
   --label "org.opencontainers.image.version=$VERSION_LABEL" \
@@ -602,7 +602,7 @@ if [ -z "$TOKEN_VALUE" ]; then
 fi
 
 release_plan_json="$(buildkite-agent meta-data get release_plan_json --default '[]' 2>/dev/null || echo '[]')"
-mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python - <<'PY'
+mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
 import json
 import os
 
@@ -703,7 +703,7 @@ if [ -z "$NPM_TOKEN_VALUE" ]; then
 fi
 
 release_plan_json="$(buildkite-agent meta-data get release_plan_json --default '[]' 2>/dev/null || echo '[]')"
-mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python - <<'PY'
+mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
 import json
 import os
 
@@ -790,7 +790,7 @@ def main() -> None:
 
     if CHANGE_DETECTION:
         pipeline.add_step(detect_changes_step())
-        pipeline.add_step(WaitStep())
+        pipeline.add_step(WaitStep(wait="~"))
 
     if MIXED_MODE:
         if PYTHON_ENTRIES:
