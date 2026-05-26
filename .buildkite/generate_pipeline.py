@@ -618,7 +618,10 @@ if [ -z "$TOKEN_VALUE" ]; then
 fi
 
 release_plan_json="$(buildkite-agent meta-data get release_plan_json --default '[]' 2>/dev/null || echo '[]')"
-mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
+publish_rows=()
+while IFS= read -r publish_row; do
+  publish_rows+=("$publish_row")
+done < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
 import json
 import os
 
@@ -719,7 +722,10 @@ if [ -z "$NPM_TOKEN_VALUE" ]; then
 fi
 
 release_plan_json="$(buildkite-agent meta-data get release_plan_json --default '[]' 2>/dev/null || echo '[]')"
-mapfile -t publish_rows < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
+publish_rows=()
+while IFS= read -r publish_row; do
+  publish_rows+=("$publish_row")
+done < <(RELEASE_PLAN_JSON="$release_plan_json" python3 - <<'PY'
 import json
 import os
 
