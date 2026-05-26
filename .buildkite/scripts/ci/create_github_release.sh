@@ -24,7 +24,7 @@ if command -v buildkite-agent >/dev/null 2>&1; then
   release_tags_json="$(buildkite-agent meta-data get release_tags_json --default '[]' 2>/dev/null || echo '[]')"
 fi
 
-RELEASE_TAGS_JSON="$release_tags_json" RELEASE_VERSION="$release_version" release_tags="$(python - <<'PY'
+RELEASE_TAGS_JSON="$release_tags_json" RELEASE_VERSION="$release_version" release_tags="$(python3 - <<'PY'
 import json
 import os
 
@@ -53,7 +53,7 @@ api_root="https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO"
 export RELEASE_GENERATE_NOTES="$GH_RELEASE_GENERATE_NOTES"
 
 payload_for_tag() {
-  RELEASE_TAG="$1" python - <<'PY'
+  RELEASE_TAG="$1" python3 - <<'PY'
 import json
 import os
 
