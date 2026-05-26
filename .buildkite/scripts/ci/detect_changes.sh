@@ -24,7 +24,7 @@ CHANGED_FILES="$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || true)"
 
 export CHANGED_FILES
 
-detection_json="$(python - <<'PY'
+detection_json="$(python3 - <<'PY'
 import json
 import os
 from pathlib import Path
@@ -133,10 +133,10 @@ print(json.dumps({
 PY
 )"
 
-should_release="$(python -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_release"] else "false")' "$detection_json")"
-should_publish_package="$(python -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_publish_package"] else "false")' "$detection_json")"
-should_build_image="$(python -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_build_image"] else "false")' "$detection_json")"
-changed_components_json="$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["changed_components"]))' "$detection_json")"
+should_release="$(python3 -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_release"] else "false")' "$detection_json")"
+should_publish_package="$(python3 -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_publish_package"] else "false")' "$detection_json")"
+should_build_image="$(python3 -c 'import json,sys; print("true" if json.loads(sys.argv[1])["should_build_image"] else "false")' "$detection_json")"
+changed_components_json="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["changed_components"]))' "$detection_json")"
 
 if [ "$CONTAINER_REGISTRY" = "ghcr" ] && [ "$should_build_image" = "false" ]; then
   echo "No docker-impacting change detected."
