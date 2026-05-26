@@ -330,7 +330,10 @@ mode="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["mode"])' "$r
 if [ "$mode" = "mixed" ]; then
   release_plan_json="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["plan"]))' "$release_output")"
   release_tags_json="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["tags"]))' "$release_output")"
-  mapfile -t manifest_files < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
+  manifest_files=()
+  while IFS= read -r manifest_file; do
+    manifest_files+=("$manifest_file")
+  done < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
   release_count="$(python3 -c 'import json,sys; print(len(json.loads(sys.argv[1])["plan"]))' "$release_output")"
 
   if command -v buildkite-agent >/dev/null 2>&1; then
@@ -345,7 +348,10 @@ if [ "$mode" = "mixed" ]; then
 
   echo "Prepared mixed release plan for $release_count components."
 else
-  mapfile -t manifest_files < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
+  manifest_files=()
+  while IFS= read -r manifest_file; do
+    manifest_files+=("$manifest_file")
+  done < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
   old_version="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["current"])' "$release_output")"
   new_version="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["next"])' "$release_output")"
   release_tag="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["tag"])' "$release_output")"
@@ -380,7 +386,10 @@ fi
 
 if [ "$CREATE_GIT_TAG" = "true" ]; then
   if [ "$mode" = "mixed" ]; then
-    mapfile -t release_tags < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])]' "$release_tags_json")
+    release_tags=()
+    while IFS= read -r release_tag_item; do
+      release_tags+=("$release_tag_item")
+    done < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])]' "$release_tags_json")
     for tag in "${release_tags[@]}"; do
       git tag -a "$tag" -m "Release $tag"
     done
