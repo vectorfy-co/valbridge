@@ -48,7 +48,8 @@ CHANGED_FILES="$(git diff --name-only "$BASE_REF"...HEAD 2>/dev/null || true)"
 
 export PACKAGE_MANAGER PACKAGE_REGISTRY VERSION_BUMP_POLICY VERSION_SOURCE HELM_CHART_PATH COMMIT_MESSAGES CHANGED_FILES
 
-release_output="$(python - <<'PY'
+release_output_file="$(mktemp)"
+python3 - <<'PY' > "$release_output_file"
 import json
 import os
 import re
@@ -321,15 +322,16 @@ print(json.dumps({
     "tag": f"v{nxt}",
 }))
 PY
-)"
+release_output="$(cat "$release_output_file")"
+rm -f "$release_output_file"
 
-mode="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["mode"])' "$release_output")"
+mode="$(python3 -c 'import json,sys; print(json.loads(sys.argv[1])["mode"])' "$release_output")"
 
 if [ "$mode" = "mixed" ]; then
-  release_plan_json="$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["plan"]))' "$release_output")"
-  release_tags_json="$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["tags"]))' "$release_output")"
-  mapfile -t manifest_files < <(python -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
-  release_count="$(python -c 'import json,sys; print(len(json.loads(sys.argv[1])["plan"]))' "$release_output")"
+  release_plan_json="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["plan"]))' "$release_output")"
+  release_tags_json="$(python3 -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["tags"]))' "$release_output")"
+  mapfile -t manifest_files < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
+  release_count="$(python3 -c 'import json,sys; print(len(json.loads(sys.argv[1])["plan"]))' "$release_output")"
 
   if command -v buildkite-agent >/dev/null 2>&1; then
     buildkite-agent meta-data set release_plan_json "$release_plan_json"
@@ -343,10 +345,10 @@ if [ "$mode" = "mixed" ]; then
 
   echo "Prepared mixed release plan for $release_count components."
 else
-  mapfile -t manifest_files < <(python -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
-  old_version="$(python -c 'import json, sys; print(json.loads(sys.argv[1])["current"])' "$release_output")"
-  new_version="$(python -c 'import json, sys; print(json.loads(sys.argv[1])["next"])' "$release_output")"
-  release_tag="$(python -c 'import json, sys; print(json.loads(sys.argv[1])["tag"])' "$release_output")"
+  mapfile -t manifest_files < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])["manifests"]]' "$release_output")
+  old_version="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["current"])' "$release_output")"
+  new_version="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["next"])' "$release_output")"
+  release_tag="$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["tag"])' "$release_output")"
 
   echo "Version bump: $old_version -> $new_version (${manifest_files[0]})"
 
@@ -378,7 +380,7 @@ fi
 
 if [ "$CREATE_GIT_TAG" = "true" ]; then
   if [ "$mode" = "mixed" ]; then
-    mapfile -t release_tags < <(python -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])] ' "$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])["tags"]))' "$release_output")")
+    mapfile -t release_tags < <(python3 -c 'import json, sys; [print(item) for item in json.loads(sys.argv[1])]' "$release_tags_json")
     for tag in "${release_tags[@]}"; do
       git tag -a "$tag" -m "Release $tag"
     done
