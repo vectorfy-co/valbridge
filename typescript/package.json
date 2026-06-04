@@ -9,7 +9,7 @@
     "test": "pnpm --filter '@vectorfyco/*' run test"
   },
   "devDependencies": {
-    "tsx": "^4.20.6",
+    "tsx": "^4.22.4",
     "typescript": "^5.0.0",
     "vitest": "^3.2.4"
   }

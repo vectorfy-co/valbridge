@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@vectorfyco/valbridge-core": "workspace:*",
-    "tsx": "^4.21.0",
+    "tsx": "^4.22.4",
     "zod": "^4.3.6"
   }
 }
