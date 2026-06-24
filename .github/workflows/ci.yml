@@ -90,7 +90,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
 
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@v6.0.5
         with:
           version: 10
 
@@ -129,7 +129,7 @@ jobs:
         with:
           go-version: "1.24"
 
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@v6.0.5
         with:
           version: 10
 
@@ -241,7 +241,7 @@ jobs:
           go-version: "1.24"
           cache-dependency-path: cli/go.sum
 
-      - uses: pnpm/action-setup@v5.0.0
+      - uses: pnpm/action-setup@v6.0.5
         with:
           version: 10
 
