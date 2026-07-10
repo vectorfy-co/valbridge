@@ -48,6 +48,8 @@ DOCKER_TAG_BRANCH = True
 
 ENABLE_CODEQL_SCAN = True
 CODEQL_BUILDKITE_BRIDGE = True
+CONVEX = json.loads(r'''{"database_mode":"cloudnative-pg","enabled":false,"hostname":"","ingress_access":"restricted","instance_name":"","mesh_client_namespaces":[],"namespace":"","storage_mode":"backblaze-b2-prefix"}''')
+OBSERVABILITY = json.loads(r'''{"ai_tracing":false,"application_id":"","browser_rum":false,"enabled":false,"production_origin":"","server_tracing":false,"service_name":""}''')
 # ── END CONFIG ────────────────────────────────────────────────────────────────
 
 import os
@@ -801,6 +803,27 @@ def deploy_step() -> CommandStep:
     )
 
 
+def convex_ensure_step() -> CommandStep:
+    mesh_namespaces = ",".join(CONVEX.get("mesh_client_namespaces") or [])
+    command = [
+        'set -euo pipefail',
+        'CFX_REPO="${CFX_REPO:-$HOME/Projects/PersonalGithub/convex-factory}"',
+        'git -C "$CFX_REPO" pull --ff-only origin main',
+        'pnpm --dir "$CFX_REPO" cfx instance ensure '
+        f'{CONVEX["instance_name"]} --namespace {CONVEX["namespace"]} '
+        f'--hostname {CONVEX["hostname"]} --storage {CONVEX["storage_mode"]} '
+        f'--database {CONVEX["database_mode"]} --ingress-access {CONVEX["ingress_access"]} '
+        + (f'--mesh-client-namespaces {mesh_namespaces} ' if mesh_namespaces else '')
+        + '--wait --json',
+    ]
+    return command_step(
+        label=":convex: Ensure Convex backend",
+        agents=_AGENTS,
+        command=command,
+        step_if=f'build.branch == "{DEFAULT_BRANCH}"',
+    )
+
+
 def main() -> None:
     pipeline = Pipeline()
     pipeline.add_environment_variable("PROJECT_AGENT_QUEUE", AGENT_QUEUE)
@@ -862,6 +885,9 @@ def main() -> None:
 
     if DEPLOY_SSH:
         pipeline.add_step(deploy_step())
+
+    if bool(CONVEX.get("enabled")):
+        pipeline.add_step(convex_ensure_step())
 
     print(pipeline.to_yaml())
 
