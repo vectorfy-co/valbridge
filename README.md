@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This project is discontinued and no longer maintained.
+
 <div align="center">
 
 # ![valbridge](https://img.shields.io/static/v1?label=&message=valbridge&color=1D4ED8&style=for-the-badge&logo=databricks&logoColor=white)
